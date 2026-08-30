@@ -1,0 +1,109 @@
+TCM CONSULTATION SIMULATION SCRIPT
+===================================
+For Whisper ASR Benchmark — Read this aloud and record it.
+
+Instructions:
+- Speak naturally, at your normal consultation pace
+- Do not slow down for herb names — say them as you normally would
+- The script mixes Mandarin and English as a real consultation would
+- Total reading time: approximately 4-5 minutes
+- Record using your phone voice memo app, or any recording app
+- Save as MP3 or WAV and run through the benchmark script
+
+---
+
+BEGIN READING HERE:
+
+今天来的病人是一位四十二岁的女性患者。
+
+她的主诉是最近两个星期持续感到疲倦，shoulder 也有一点酸痛。
+她说最近工作压力比较大，睡眠质量也不好，容易半夜醒来。
+
+我问她饮食情况，她说 appetite is okay，但是喜欢吃冷的东西，
+经常喝冰水，三餐不规律。
+
+大便方面，她说每天一次，但是比较软，有时候不成形。
+小便正常，没有特别的问题。
+
+情绪方面，她最近比较容易烦躁，有时候会莫名其妙地叹气。
+月经周期基本正常，但是经前会有轻微的胸胀。
+
+接下来我检查舌象和脉象。
+
+舌诊：舌质淡红，舌体稍胖，边有齿痕，苔白腻，舌中部苔稍厚。
+
+脉诊：脉弦细，左关脉稍弦，右关脉濡缓，两尺脉沉。
+
+根据四诊所见，这位病人的辨证是肝郁气滞，脾虚湿盛。
+
+治则：疏肝理气，健脾化湿。
+
+处方如下：
+
+柴胡 ten grams
+白芍 fifteen grams
+当归 ten grams
+白术 fifteen grams
+茯苓 twenty grams
+黄芪 thirty grams
+党参 fifteen grams
+陈皮 six grams
+半夏 ten grams
+甘草 six grams
+薏苡仁 twenty grams
+砂仁 five grams，后下
+
+方剂基础：逍遥散合四君子汤加减。
+
+服药说明：七天，每天两次，饭后半小时服用，温服。
+
+复诊：下周同一时间。
+
+---
+
+SECOND PASSAGE — More herb names (read this after a short pause):
+
+第二个病人，男性，五十五岁，主诉是膝盖疼痛三个月。
+
+舌质暗红，有瘀斑，苔薄白。
+脉象涩，两尺脉沉细。
+
+辨证：肾阳虚，寒湿痹阻，夹有血瘀。
+
+处方：
+
+制附子 nine grams，先煎三十分钟
+肉桂 five grams，后下
+熟地黄 twenty grams
+山茱萸 twelve grams
+杜仲 fifteen grams
+牛膝 fifteen grams
+独活 ten grams
+桑寄生 twenty grams
+川芎 ten grams
+红花 six grams
+桃仁 ten grams
+延胡索 twelve grams
+炙甘草 six grams
+
+方剂基础：独活寄生汤合桂附地黄丸加减。
+
+服药说明：十四天，每天两次，饭前温服。
+The patient should avoid cold food and drinks during the treatment period.
+请注意保暖，避免受寒。
+
+---
+
+END OF SCRIPT
+
+Herb names included in this script (for benchmark reference):
+柴胡, 白芍, 当归, 白术, 茯苓, 黄芪, 党参, 陈皮, 半夏, 甘草,
+薏苡仁, 砂仁, 制附子, 肉桂, 熟地黄, 山茱萸, 杜仲, 牛膝,
+独活, 桑寄生, 川芎, 红花, 桃仁, 延胡索, 炙甘草
+
+Pulse/tongue terms included:
+弦细, 左关脉, 右关脉, 濡缓, 两尺脉, 涩, 沉细, 舌质淡红,
+舌体稍胖, 齿痕, 苔白腻, 舌质暗红, 瘀斑, 苔薄白
+
+Pattern names included:
+肝郁气滞, 脾虚湿盛, 肾阳虚, 寒湿痹阻, 血瘀

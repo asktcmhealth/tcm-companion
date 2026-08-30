@@ -1,0 +1,44 @@
+# Real consultation recordings and transcripts -- contains PII (NRIC, phone
+# numbers, names) on at least one file. Never commit this directory.
+audio recording/
+
+# Desktop app (Tauri)
+app/node_modules/
+app/dist/
+app/src-tauri/target/
+app/src-tauri/gen/
+# PyInstaller build output and the compiled sidecar binaries it copies into
+# src-tauri/binaries -- regeneratable from sidecar*/main*.py, not source.
+app/sidecar/build/
+app/sidecar_whisper/build/
+app/src-tauri/binaries/
+
+# Mobile app (React Native)
+mobile/node_modules/
+mobile/android/build/
+mobile/android/app/build/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/ios/Pods/
+mobile/ios/build/
+mobile/ios/*.xcuserstate
+mobile/ios/*.xcworkspace/xcuserdata/
+mobile/ios/*.xcodeproj/xcuserdata/
+mobile/ios/DerivedData/
+*.jsbundle
+
+# Large pretrained model artifacts -- fetched separately, not source
+pretrained_models/
+*.bin
+*.ggml
+
+# Python
+__pycache__/
+*.pyc
+
+# Claude Code local-only settings
+.claude/settings.local.json
+
+# OS cruft
+.DS_Store
+Thumbs.db

@@ -1,0 +1,77 @@
+TCM CONSULTATION SIMULATION SCRIPT #2
+======================================
+For expanded benchmark testing — new herbs + de-ID layer validation.
+Read this aloud and record it, same as script #1.
+
+Instructions:
+- Speak naturally, at your normal consultation pace
+- Do not slow down for herb names — say them as you normally would
+- The script mixes Mandarin and English as a real consultation would
+- IMPORTANT: the "patient name / NRIC / phone" in this script are
+  DELIBERATELY FAKE placeholder values (张三 is the Chinese equivalent of
+  "John Doe" — a standard placeholder name, not a real person). This tests
+  whether the de-identification layer catches PII after real ASR
+  transcription, not just in hand-typed text. Do not substitute a real
+  name/NRIC/phone when recording.
+- Total reading time: approximately 4 minutes
+- Save as MP3 or WAV and run through the pipeline
+
+---
+
+BEGIN READING HERE:
+
+今天来的病人叫张三，NRIC是S9876543Z，电话是81234567。
+
+他是一位三十岁的男性患者，主诉是反复咳嗽两个星期，痰多色白，
+稍微有点气喘，activities make it worse，晚上咳嗽比较厉害。
+
+他说最近食欲还可以，appetite is okay，大便正常，小便也正常。
+睡眠方面，因为咳嗽经常被吵醒，睡不好。
+
+情绪方面还算稳定，没有特别烦躁。
+
+接下来我检查舌象和脉象。
+
+舌诊：舌淡红，苔白腻，舌体正常大小，没有齿痕。
+
+脉诊：脉滑，右寸脉浮，左关脉弦，两尺脉沉细。
+
+根据四诊所见，这位病人的辨证是风寒犯肺，痰湿阻肺。
+
+治则：疏风散寒，化痰止咳。
+
+处方如下：
+
+麻黄 six grams
+桂枝 ten grams
+杏仁 ten grams
+甘草 six grams
+苍术 ten grams
+厚朴 nine grams，后下
+陈皮 six grams
+半夏 ten grams
+茯苓 fifteen grams
+桔梗 ten grams
+紫苏子 ten grams
+浙贝母 ten grams
+瓜蒌 fifteen grams
+
+方剂基础：三拗汤合二陈汤加减。
+
+服药说明：五天，每天两次，饭后温服。
+
+复诊：五天后同一时间。
+
+请注意保暖，避免受寒，多喝温水。
+
+---
+
+END OF SCRIPT
+
+New herbs in this script (not in original 25-herb test set):
+麻黄, 桂枝, 杏仁, 苍术, 厚朴, 桔梗, 紫苏子, 浙贝母, 瓜蒌
+
+Synthetic PII included (for de-ID layer testing — NOT real):
+张三 (patient name placeholder)
+S9876543Z (fake NRIC)
+81234567 (fake phone number)

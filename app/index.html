@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TCM Consultation Scribe (prototype)</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <main class="container">
+      <button type="button" id="lang-toggle" class="lang-toggle" aria-label="Switch language">中文</button>
+
+      <header class="app-header">
+        <div class="app-eyebrow">
+          <span class="app-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 3C10 7 6 12.5 6 18a10 10 0 0 0 20 0c0-5.5-4-11-10-15Z" fill="currentColor" opacity="0.16"/>
+              <path d="M16 6.5C11.5 10 8.5 14.2 8.5 18a7.5 7.5 0 0 0 15 0c0-3.8-3-8-7.5-11.5Z" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M16 10v15" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+              <path d="M16 14c-1.8-1.6-3.2-1.9-4.5-1.4M16 19c-2.1-1.7-3.7-2-5.2-1.4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="app-name" data-i18n="app_name">TCM Consultation Scribe</span>
+        </div>
+        <h1 data-i18n="headline">Never wait between patients again.</h1>
+        <p data-i18n="subline">
+          Recording, transcribing, and note-writing all happen in the background — so
+          paperwork doesn't slow down your day.
+        </p>
+        <span class="local-badge" data-i18n="local_badge">Runs fully offline</span>
+      </header>
+
+      <section class="step">
+        <div class="step-heading">
+          <span class="step-number">1</span>
+          <h2 data-i18n="step1_title">Add a consultation</h2>
+        </div>
+        <p class="step-subtext" data-i18n="step1_subtext">
+          Each one queues in the background — start the next patient right away without waiting.
+        </p>
+
+        <div class="input-tabs" role="tablist" aria-label="Consultation input method">
+          <button type="button" class="tab-btn active" id="tab-record" data-tab="record"
+            role="tab" aria-selected="true" aria-controls="panel-record">
+            <svg class="tab-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.5a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0V5A2.5 2.5 0 0 0 10 2.5Z" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 9v.5a4.5 4.5 0 0 0 9 0V9M10 14v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+            <span data-i18n="tab_record">Record audio</span></button>
+          <button type="button" class="tab-btn" id="tab-audio" data-tab="audio"
+            role="tab" aria-selected="false" aria-controls="panel-audio">
+            <svg class="tab-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 3.5h8l3.5 3.5V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M12 3.5V7h3.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+            <span data-i18n="tab_audio">Choose file</span></button>
+          <button type="button" class="tab-btn" id="tab-text" data-tab="text"
+            role="tab" aria-selected="false" aria-controls="panel-text">
+            <svg class="tab-icon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M7 2.5h6a1 1 0 0 1 1 1V4h1a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h1v-.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7 9h6M7 12h6M7 15h3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            <span data-i18n="tab_text">Paste transcript</span></button>
+        </div>
+
+        <div class="card">
+          <div class="tab-panel active" id="panel-record" role="tabpanel" aria-labelledby="tab-record">
+            <p class="step-subtext" style="margin-left:0" data-i18n="record_panel_desc">
+              Uses this device's microphone. Recording is instant — only the transcription that
+              follows runs in the background queue.
+            </p>
+            <div class="record-hero">
+              <button id="record-button" type="button" class="record-hero-button" aria-label="Start recording">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect id="record-icon-square" x="7.5" y="7.5" width="9" height="9" rx="2.5" fill="currentColor" opacity="0" />
+                  <circle id="record-icon-dot" cx="12" cy="12" r="6.5" fill="currentColor" />
+                </svg>
+              </button>
+              <span class="record-hero-timer" id="record-timer" aria-live="polite">0:00</span>
+              <div class="waveform" id="waveform" aria-hidden="true">
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+                <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
+              </div>
+              <span class="record-hero-hint" id="record-hint" data-i18n="record_hint_idle">Tap to start recording</span>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="panel-audio" role="tabpanel" aria-labelledby="tab-audio">
+            <p class="step-subtext" style="margin-left:0" data-i18n="audio_panel_desc">
+              First use loads the speech recognition model, so that run is slower — every run
+              after is quicker.
+            </p>
+            <div class="audio-pick-row">
+              <button id="pick-audio-button" type="button" data-i18n="pick_audio_button">Choose audio file…</button>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="panel-text" role="tabpanel" aria-labelledby="tab-text">
+            <p class="step-subtext" style="margin-left:0" id="transcript-input-desc" data-i18n="text_panel_desc">
+              Skips transcription — runs correction, extraction, validation, and
+              de-identification directly on the pasted text.
+            </p>
+            <textarea
+              id="transcript-input"
+              rows="8"
+              aria-label="Raw transcript text"
+              aria-describedby="transcript-input-desc"
+              placeholder="Paste a raw ASR transcript here..."
+            ></textarea>
+            <div class="row" style="margin-top: 0.75em">
+              <button id="run-button" type="button" data-i18n="run_button">Queue pasted text</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="stage-panel" id="stage-panel" role="status" aria-live="polite">
+        <div class="stage-row">
+          <span class="stage-label">
+            <span class="pulse-dot" id="stage-dot" aria-hidden="true"></span>
+            <span id="stage-text">Working…</span>
+          </span>
+          <span class="stage-timer" id="stage-timer" aria-hidden="true">0:00</span>
+        </div>
+        <div class="progress-track" aria-hidden="true"></div>
+      </div>
+
+      <section class="step">
+        <div class="step-heading">
+          <span class="step-number">2</span>
+          <h2 data-i18n="step2_title">Patients</h2>
+        </div>
+        <p class="step-subtext" data-i18n="step2_subtext">Select a completed one below to view its results.</p>
+        <ul class="patient-list" id="patient-list">
+          <li class="empty-state" id="patient-list-empty" data-i18n="patient_list_empty">No consultations yet — record or add one above.</li>
+        </ul>
+      </section>
+
+      <div class="results" id="results-panel" hidden>
+        <section>
+          <h2 data-i18n="results_note_title">Consultation note</h2>
+          <p class="section-note" data-i18n="results_note_desc">
+            The consultation portion of the transcript, PII removed — not an AI summary, zero
+            risk of invented content. Treatment (prescription/acupuncture) is intentionally
+            excluded here and shown separately below.
+          </p>
+          <div id="consultation-note-output"><span class="empty-state" data-i18n="empty_no_result">No result yet.</span></div>
+        </section>
+
+        <section>
+          <h2 data-i18n="results_prescription_title">Prescription draft</h2>
+          <p class="section-note" data-i18n="results_prescription_desc">Requires physician review before sign-off.</p>
+          <div id="prescription-output"><span class="empty-state" data-i18n="empty_no_result">No result yet.</span></div>
+        </section>
+
+        <section>
+          <h2 data-i18n="results_acupuncture_title">Acupuncture treatment</h2>
+          <p class="section-note" data-i18n="results_acupuncture_desc">
+            Requires physician review. Untested against real acupuncture audio as of this build —
+            validate carefully before trusting.
+          </p>
+          <div id="acupuncture-output"><span class="empty-state" data-i18n="empty_no_result">No result yet.</span></div>
+        </section>
+
+        <section>
+          <h2 data-i18n="results_deid_title">De-identification report</h2>
+          <p class="section-note" data-i18n="results_deid_desc">PII found and stripped from the consultation note above.</p>
+          <div id="deid-output"><span class="empty-state" data-i18n="empty_no_result">No result yet.</span></div>
+        </section>
+
+        <details>
+          <summary data-i18n="raw_json_summary">Raw JSON output</summary>
+          <pre id="raw-output"></pre>
+        </details>
+      </div>
+    </main>
+  </body>
+</html>
