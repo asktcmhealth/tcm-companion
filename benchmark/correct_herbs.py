@@ -165,6 +165,51 @@ def find_best_matches(transcript, vocab, threshold=0.75, block_phrases=None):
 def window_is_not_identity(transcript, start, end, term):
     return start is not None
 
+# If another vocab term scores within this much of the winner WHEN TESTED
+# AGAINST THE WINNER'S OWN MATCHED WINDOW, treat the match as too close to
+# call automatically -- surface it for physician review instead of silently
+# picking a winner. Ported from the mobile app's correctHerbs.ts after live
+# testing on real consultation audio there found two confirmed cases of a
+# wrong-but-plausible herb winning outright with no signal anything was
+# uncertain: 制附子 (high-risk) lost to 知母 (not high-risk) at 75% -- with
+# 制附子 itself never reaching the acceptance threshold anywhere in the
+# transcript, so it never appeared as a competing "candidate" by the naive
+# approach of only comparing already-accepted matches; and 麻黄 (high-risk)
+# lost to 大黄 (also high-risk, but a different herb) at 86%, with 麻黄
+# scoring 76.2% when tested against that exact winning span -- a 9.5-point
+# gap that an earlier, narrower 0.08 margin missed entirely. 0.12 was
+# reached empirically after that miss, catching both confirmed real
+# collisions with a small margin of headroom. This same fuzzy-matching
+# algorithm is shared between mobile and desktop, so the underlying
+# vulnerability was never desktop-specific -- it just hadn't shown up yet
+# on the two real recordings desktop had been tested against. Mirrors the
+# reject-on-conflict (not fallback-search) rule already applied to dosage-
+# claiming in pipeline.py's extract_prescription.
+_AMBIGUITY_MARGIN = 0.12
+
+
+def _flag_ambiguous(segment, vocab, edits):
+    """Tests every OTHER vocab term directly against the exact window text
+    that won, rather than comparing to each term's own independently-best
+    window elsewhere in the transcript -- that distinction is what makes
+    this catch the confirmed real cases (see _AMBIGUITY_MARGIN above).
+    Returns edits with two fields appended: (start, end, term, score,
+    ambiguous, runner_up) -- runner_up is None when not ambiguous."""
+    flagged = []
+    for start, end, term, score in edits:
+        window_py = pinyin_str(segment[start:end])
+        runner_up = None
+        runner_up_score = -1.0
+        for other in vocab:
+            if other == term:
+                continue
+            other_score = similarity(pinyin_str(other), window_py)
+            if score - other_score <= _AMBIGUITY_MARGIN and other_score > runner_up_score:
+                runner_up = other
+                runner_up_score = other_score
+        flagged.append((start, end, term, score, runner_up is not None, runner_up))
+    return flagged
+
 def apply_corrections(transcript, matches):
     """Apply highest-confidence, non-overlapping corrections to the transcript."""
     # Best matches first; on tied/close scores, prefer the LONGER span (e.g.
@@ -326,9 +371,10 @@ def correct_spans_only(text, spans, vocab, block_phrases=None):
         segment = corrected[start:end]
         matches = find_best_matches(segment, vocab, block_phrases=block_phrases)
         seg_corrected, edits = apply_corrections(segment, matches)
+        edits = _flag_ambiguous(segment, vocab, edits)
         corrected = corrected[:start] + seg_corrected + corrected[end:]
-        for s, e, term, score in edits:
-            all_edits.append((s + start, e + start, term, score))
+        for s, e, term, score, ambiguous, runner_up in edits:
+            all_edits.append((s + start, e + start, term, score, ambiguous, runner_up))
 
     return corrected, sorted(all_edits, key=lambda e: e[0])
 
@@ -349,9 +395,11 @@ def find_prescription_spans(text, max_span_len=250):
 def correct_prescription_only(text, vocab=None):
     """Safe entry point for pipeline use: only corrects herb names inside
     detected prescription spans, leaves everything else untouched. Returns
-    (corrected_text, edits, spans_found). If spans_found is empty, no
-    correction was applied at all -- caller should flag for manual review
-    rather than assume the transcript has no herbs."""
+    (corrected_text, edits, spans_found), where each edit is
+    (start, end, term, score, ambiguous, runner_up) -- see _AMBIGUITY_MARGIN.
+    If spans_found is empty, no correction was applied at all -- caller
+    should flag for manual review rather than assume the transcript has no
+    herbs."""
     vocab = vocab if vocab is not None else herb_db_names()
     spans = find_prescription_spans(text)
     corrected, edits = correct_spans_only(text, spans, vocab, block_phrases=_PREP_INSTRUCTIONS)

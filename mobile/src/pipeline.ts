@@ -124,9 +124,19 @@ export interface AcupointEntry {
   meridian: string;
   laterality: string | null;
   dbConfirmed: boolean;
+  ambiguous: boolean;
+  ambiguousWith?: string;
 }
 
-export function extractAcupuncture(text: string): AcupointEntry[] {
+// `edits` mirrors extractPrescription's parameter -- pass the edits from
+// correctAcupunctureOnly() upstream so ambiguity flags (see
+// AMBIGUITY_MARGIN in correctHerbs.ts) survive into the final point list.
+export function extractAcupuncture(text: string, edits: Correction[] = []): AcupointEntry[] {
+  const ambiguousByName = new Map<string, Correction>();
+  for (const edit of edits) {
+    if (edit.ambiguous) ambiguousByName.set(edit.term, edit);
+  }
+
   const entries: Array<AcupointEntry & { sourceStart: number }> = [];
   const spans = findAcupunctureSpans(text);
 
@@ -157,12 +167,15 @@ export function extractAcupuncture(text: string): AcupointEntry[] {
         const after = segment.slice(mEnd, mEnd + 6);
         const latMatch = LATERALITY_PATTERN.exec(after);
         const info = ACUPOINT_DATABASE[point];
+        const ambiguousEdit = ambiguousByName.get(point);
         entries.push({
           name: point,
           code: info.code,
           meridian: info.meridian,
           laterality: latMatch ? latMatch[0] : null,
           dbConfirmed: true,
+          ambiguous: !!ambiguousEdit,
+          ambiguousWith: ambiguousEdit?.runnerUp,
           sourceStart: start + mStart,
         });
       }

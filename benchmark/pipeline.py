@@ -58,14 +58,26 @@ def transcribe_whisper(audio_path):
 _DOSAGE_PATTERN = re.compile(r"(\d+)\s*[gG]")
 
 
-def extract_prescription(text):
+def extract_prescription(text, edits=None):
     """Extract (herb, dosage_g, db_confirmed) tuples from corrected
     prescription-section text. This is a starter heuristic: it looks for a
     known herb name immediately followed by a dosage number. It does NOT
     replace the real product's herb-DB-autocomplete UI (plan-review.md:
     'Prescription/herb: Herb DB autocomplete only -- NO LLM') -- this is for
     prototyping the extraction+validation concept, not for auto-writing a
-    real prescription."""
+    real prescription.
+
+    `edits` (optional): the edit list from correct_prescription_only(), used
+    to carry each herb's ambiguous/runner_up flag from the correction step
+    into the final entry -- see correct_herbs.py's _AMBIGUITY_MARGIN.
+    Matched by name, so a herb prescribed twice in one visit would share one
+    flag between both entries; an acceptable prototype limitation since it
+    never under-flags, only occasionally over-flags."""
+    ambiguous_by_name = {}
+    for e in (edits or []):
+        if len(e) > 4 and e[4]:  # (start, end, term, score, ambiguous, runner_up)
+            ambiguous_by_name[e[2]] = e[5]
+
     entries = []
     spans = find_prescription_spans(text)
     for start, end in spans:
@@ -109,6 +121,8 @@ def extract_prescription(text):
                         "dosage": int(dose_m.group(1)),
                         "unit": "g",
                         "db_confirmed": True,  # matched against HERB_DATABASE
+                        "ambiguous": herb in ambiguous_by_name,
+                        "ambiguous_with": ambiguous_by_name.get(herb),
                         "source_span": (start + m.start(), start + dose_end),
                     })
     entries.sort(key=lambda e: e["source_span"][0])
@@ -122,13 +136,21 @@ def extract_prescription(text):
 _LATERALITY_PATTERN = re.compile(r"(双侧|两侧|左侧|右侧|左|右)")
 
 
-def extract_acupuncture(text):
+def extract_acupuncture(text, edits=None):
     """Extract acupoint entries from corrected acupuncture-section text.
     Same structural pattern as extract_prescription (longest-name-first,
     claimed-span tracking to avoid substring double-counting), but no
     dosage number to anchor on -- acupoints are just names in a list, so
     this is less validated than the herb path. See
-    correct_herbs.py:find_acupuncture_spans for the full caveat."""
+    correct_herbs.py:find_acupuncture_spans for the full caveat.
+
+    `edits` (optional): see extract_prescription's docstring -- same
+    ambiguous/runner_up propagation, applied to acupoint names instead."""
+    ambiguous_by_name = {}
+    for e in (edits or []):
+        if len(e) > 4 and e[4]:
+            ambiguous_by_name[e[2]] = e[5]
+
     entries = []
     spans = find_acupuncture_spans(text)
     for start, end in spans:
@@ -148,6 +170,8 @@ def extract_acupuncture(text):
                     "meridian": ACUPOINT_DATABASE[point]["meridian"],
                     "laterality": lat_m.group(0) if lat_m else None,
                     "db_confirmed": True,  # matched against ACUPOINT_DATABASE
+                    "ambiguous": point in ambiguous_by_name,
+                    "ambiguous_with": ambiguous_by_name.get(point),
                     "source_span": (start + m.start(), start + m.end()),
                 })
     entries.sort(key=lambda e: e["source_span"][0])
@@ -258,8 +282,9 @@ def main():
     print(f"       {len(edits)} correction(s) applied across {len(spans)} prescription span(s)")
 
     print("[3/5] Extracting prescription (herb + dosage)...")
-    herbs = extract_prescription(corrected_transcript)
-    print(f"       {len(herbs)} herb entries extracted")
+    herbs = extract_prescription(corrected_transcript, edits)
+    ambiguous_count = sum(1 for h in herbs if h["ambiguous"])
+    print(f"       {len(herbs)} herb entries extracted ({ambiguous_count} flagged ambiguous -- verify against a runner-up)")
 
     print("[4/5] Validating dosages against range table...")
     # (validation happens inside build_note_draft, counted here for the log)
@@ -281,6 +306,8 @@ def main():
     for h in draft["fields"]["prescription"]["herbs"]:
         flag = " ⚠ OUT OF RANGE" if h["dosage_warning"] else ""
         print(f"  {h['name']} {h['dosage']}{h['unit']}{flag}")
+        if h["ambiguous"]:
+            print(f"    UNCERTAIN -- could also be \"{h['ambiguous_with']}\". Please verify.")
 
 
 if __name__ == "__main__":
