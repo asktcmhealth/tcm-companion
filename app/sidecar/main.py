@@ -34,7 +34,11 @@ from deid_layer import deidentify
 
 def process(transcript_text):
     corrected, edits, spans = correct_prescription_only(transcript_text)
-    herbs = extract_prescription(corrected)
+    # `edits` is passed through so each herb carries its ambiguous/
+    # ambiguous_with flag (see correct_herbs._AMBIGUITY_MARGIN) into the JSON
+    # the UI renders -- without it the safety check runs but the physician
+    # never sees it.
+    herbs = extract_prescription(corrected, edits)
     for h in herbs:
         status, msg, high_risk = check_dosage(h["name"], h["dosage"])
         h["dosage_warning"] = (status != "ok")
@@ -45,8 +49,9 @@ def process(transcript_text):
     # Acupuncture correction runs on top of the herb-corrected text (not the
     # original) so both treatment types benefit from whatever the other
     # already fixed nearby, then its own edits are appended to the same text.
+    pre_acupuncture_text = corrected  # acu_edits' offsets index THIS text, not the corrected one
     corrected, acu_edits, acu_spans = correct_acupuncture_only(corrected)
-    acupoints = extract_acupuncture(corrected)
+    acupoints = extract_acupuncture(corrected, acu_edits)
     for a in acupoints:
         del a["source_span"]
 
@@ -61,11 +66,17 @@ def process(transcript_text):
         "prescription_spans_found": len(spans),
         "acupuncture_spans_found": len(acu_spans),
         "correction_edits": [
-            {"original": transcript_text[s:e], "corrected": term, "similarity": round(score, 2)}
-            for s, e, term, score in edits
+            {
+                "original": transcript_text[s:e], "corrected": term, "similarity": round(score, 2),
+                "ambiguous": ambiguous, "ambiguous_with": runner_up,
+            }
+            for s, e, term, score, ambiguous, runner_up in edits
         ] + [
-            {"original": corrected[s:e], "corrected": term, "similarity": round(score, 2), "type": "acupuncture"}
-            for s, e, term, score in acu_edits
+            {
+                "original": pre_acupuncture_text[s:e], "corrected": term, "similarity": round(score, 2),
+                "type": "acupuncture", "ambiguous": ambiguous, "ambiguous_with": runner_up,
+            }
+            for s, e, term, score, ambiguous, runner_up in acu_edits
         ],
         "prescription": {"herbs": herbs},
         "acupuncture": {"points": acupoints},
