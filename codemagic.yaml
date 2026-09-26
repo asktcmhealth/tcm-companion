@@ -87,6 +87,8 @@ workflows:
     instance_type: mac_mini_m2
     working_directory: mobile
     environment:
+      groups:
+        - e2e
       node: lts
       xcode: latest
       cocoapods: default
