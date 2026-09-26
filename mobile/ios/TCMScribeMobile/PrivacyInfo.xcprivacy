@@ -28,6 +28,19 @@
 				<string>35F9.1</string>
 			</array>
 		</dict>
+		<!-- react-native-fs reads NSFileSystemFreeSize/NSFileSystemSize (RNFS.getFSInfo),
+		     a disk-space "required reason" API, and ships no privacy manifest of its own.
+		     Undeclared, App Store Connect rejects the upload (ITMS-91053). E174.1 is
+		     checking free space before writing files, which is exactly what
+		     downloadModel() does before the 539MB model download. -->
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryDiskSpace</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>E174.1</string>
+			</array>
+		</dict>
 	</array>
 	<key>NSPrivacyCollectedDataTypes</key>
 	<array/>
