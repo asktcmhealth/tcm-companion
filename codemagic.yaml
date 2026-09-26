@@ -30,6 +30,52 @@ workflows:
     artifacts:
       - /tmp/xcodebuild_logs/*.log
 
+  # Builds a Release app (JS bundled inside, no Metro needed), launches it on an
+  # iPhone simulator, and saves screenshots as build artifacts -- the way to SEE
+  # the iOS app without owning a Mac. Release has __DEV__ off, so the dev
+  # "sample text" buttons are absent and the screen shown is the real first
+  # launch (speech model not downloaded yet) in light and dark mode.
+  ios-simulator-screenshot:
+    name: iOS Simulator run + screenshots
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    working_directory: mobile
+    environment:
+      node: lts
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: npm install
+      - name: Install CocoaPods dependencies
+        script: cd ios && pod install
+      - name: Build Release for iOS Simulator
+        script: |
+          xcodebuild build             -workspace ios/TCMScribeMobile.xcworkspace             -scheme TCMScribeMobile             -configuration Release             -sdk iphonesimulator             -destination 'generic/platform=iOS Simulator'             -derivedDataPath build/sim             CODE_SIGNING_ALLOWED=NO
+      - name: Launch on a simulator and take screenshots
+        script: |
+          APP=$(find build/sim -name "TCMScribeMobile.app" -path "*Release-iphonesimulator*" | head -1)
+          echo "App bundle: $APP"
+          DEVICE=$(xcrun simctl list devices available | grep -m1 "iPhone" | sed -E 's/.*\(([0-9A-F-]{36})\).*//')
+          echo "Simulator: $DEVICE"
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP"
+          mkdir -p screenshots
+          xcrun simctl launch "$DEVICE" com.tcmscribemobile
+          sleep 12
+          xcrun simctl io "$DEVICE" screenshot screenshots/01-first-launch-light.png
+          xcrun simctl ui "$DEVICE" appearance dark
+          sleep 4
+          xcrun simctl io "$DEVICE" screenshot screenshots/02-first-launch-dark.png
+          # If the app crashed, this is where the reason shows up.
+          xcrun simctl spawn "$DEVICE" log show --last 2m --predicate 'process == "TCMScribeMobile"' --style compact | tail -60 > screenshots/app-log.txt || true
+    artifacts:
+      - screenshots/*.png
+      - screenshots/*.txt
+      - mobile/screenshots/*.png
+      - mobile/screenshots/*.txt
+
   # Real-device / TestFlight build. Needs an Apple Developer account ($99/yr,
   # enrolled by the account owner -- see project notes) and an
   # app_store_connect integration configured in the Codemagic dashboard
