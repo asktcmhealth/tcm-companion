@@ -1,3 +1,5 @@
+# Must live at the REPO ROOT (Codemagic ignores it elsewhere); the React Native
+# project is the mobile/ subfolder, so every workflow sets working_directory.
 workflows:
   # Compiles the iOS target for the Simulator only. No code signing needed --
   # this is deliberately runnable BEFORE an Apple Developer account exists,
@@ -7,6 +9,11 @@ workflows:
     name: iOS Simulator build (no signing)
     max_build_duration: 60
     instance_type: mac_mini_m2
+    working_directory: mobile
+    environment:
+      node: lts
+      xcode: latest
+      cocoapods: default
     scripts:
       - name: Install npm dependencies
         script: npm install
@@ -32,9 +39,13 @@ workflows:
     name: iOS device build (TestFlight)
     max_build_duration: 90
     instance_type: mac_mini_m2
+    working_directory: mobile
     integrations:
       app_store_connect: codemagic
     environment:
+      node: lts
+      xcode: latest
+      cocoapods: default
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.tcmscribemobile
@@ -55,6 +66,7 @@ workflows:
             --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
+      - mobile/build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
