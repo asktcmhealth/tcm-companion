@@ -76,12 +76,10 @@ workflows:
       - mobile/screenshots/*.png
       - mobile/screenshots/*.txt
 
-  # End-to-end test on the iOS Simulator with REAL audio. The audio is never in
-  # the repo in readable form: mobile/e2e/audio.enc is AES-256 encrypted and is
-  # decrypted here with the passphrase given in TEST_AUDIO_PASSPHRASE (typed
-  # into the Start new build dialog, never stored in the repo). The app finds
-  # Documents/autotest/plan.json, downloads the speech model, transcribes the
-  # audio, and writes result.json; tools/score_e2e.js grades it.
+  # End-to-end test on the iOS Simulator with REAL audio (mobile/e2e/audio.m4a,
+  # a read-aloud of benchmark/simulation_script.txt: no patient data). The app
+  # finds Documents/autotest/plan.json, downloads the speech model, transcribes
+  # the audio, and writes result.json; tools/score_e2e.js grades it.
   ios-simulator-e2e:
     name: iOS Simulator end-to-end (real audio)
     max_build_duration: 120
@@ -99,13 +97,9 @@ workflows:
       - name: Build Release for iOS Simulator
         script: |
           xcodebuild build -workspace ios/TCMScribeMobile.xcworkspace -scheme TCMScribeMobile -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO
-      - name: Decrypt test audio
+      - name: Convert test audio to WAV
         script: |
-          [ -n "$TEST_AUDIO_PASSPHRASE" ] || { echo "Set TEST_AUDIO_PASSPHRASE in the Start new build dialog"; exit 1; }
-          mkdir -p e2e
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -md sha256 -in e2e/audio.enc -out e2e/audio.m4a -pass env:TEST_AUDIO_PASSPHRASE
           afconvert -f WAVE -d LEI16@16000 -c 1 e2e/audio.m4a e2e/audio.wav
-          rm e2e/audio.m4a
           ls -l e2e
       - name: Install app, drop test plan, run and wait for result
         script: |
