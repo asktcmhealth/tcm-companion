@@ -77,8 +77,9 @@ workflows:
       - mobile/screenshots/*.txt
 
   # End-to-end test on the iOS Simulator with REAL audio. The audio is never in
-  # the repo: it lives in Codemagic as secret variables TEST_AUDIO_B64_1..N
-  # (base64 pieces of one m4a), reassembled here. The app finds
+  # the repo in readable form: mobile/e2e/audio.enc is AES-256 encrypted and is
+  # decrypted here with the passphrase given in TEST_AUDIO_PASSPHRASE (typed
+  # into the Start new build dialog, never stored in the repo). The app finds
   # Documents/autotest/plan.json, downloads the speech model, transcribes the
   # audio, and writes result.json; tools/score_e2e.js grades it.
   ios-simulator-e2e:
@@ -87,8 +88,6 @@ workflows:
     instance_type: mac_mini_m2
     working_directory: mobile
     environment:
-      groups:
-        - e2e
       node: lts
       xcode: latest
       cocoapods: default
@@ -100,22 +99,13 @@ workflows:
       - name: Build Release for iOS Simulator
         script: |
           xcodebuild build -workspace ios/TCMScribeMobile.xcworkspace -scheme TCMScribeMobile -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO
-      - name: Rebuild test audio from secret variables
+      - name: Decrypt test audio
         script: |
+          [ -n "$TEST_AUDIO_PASSPHRASE" ] || { echo "Set TEST_AUDIO_PASSPHRASE in the Start new build dialog"; exit 1; }
           mkdir -p e2e
-          : > e2e/audio.b64
-          i=1
-          while true; do
-            eval "PART=\${TEST_AUDIO_B64_$i:-}"
-            [ -z "$PART" ] && break
-            printf '%s' "$PART" >> e2e/audio.b64
-            i=$((i+1))
-          done
-          echo "pieces: $((i-1))"
-          [ "$i" -gt 1 ] || { echo "No TEST_AUDIO_B64_1 variable found"; exit 1; }
-          base64 --decode < e2e/audio.b64 > e2e/audio.m4a
-          rm e2e/audio.b64
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 100000 -md sha256 -in e2e/audio.enc -out e2e/audio.m4a -pass env:TEST_AUDIO_PASSPHRASE
           afconvert -f WAVE -d LEI16@16000 -c 1 e2e/audio.m4a e2e/audio.wav
+          rm e2e/audio.m4a
           ls -l e2e
       - name: Install app, drop test plan, run and wait for result
         script: |
