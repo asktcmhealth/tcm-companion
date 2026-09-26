@@ -41,6 +41,7 @@ import { runPipeline, type PipelineOutput } from './src/runPipeline';
 import { defaultLang, translate, type Lang } from './src/i18n';
 import { useTheme, type Theme } from './src/theme';
 import { HerbList, PointList } from './src/Results';
+import { logAutoTest, readAutoTestPlan, writeAutoTestResult, type AutoTestPlan } from './src/autoTest';
 
 type Stage =
   | 'checking'
@@ -172,13 +173,76 @@ function Screen(): React.JSX.Element {
     }
   }, [fail, loadModel]);
 
+  // CI end-to-end mode (see src/autoTest.ts): a plan file inside the app's own
+  // sandbox replaces the normal setup with a scripted download -> transcribe run.
+  const runAutoTest = useCallback(
+    async (plan: AutoTestPlan) => {
+      const startedAt = Date.now();
+      const result: Record<string, unknown> = { startedAt: new Date(startedAt).toISOString() };
+      const lap = () => {
+        const t = Date.now();
+        return () => Number(((Date.now() - t) / 1000).toFixed(1));
+      };
+      try {
+        if (!(await isModelDownloaded())) {
+          await logAutoTest(startedAt, 'downloading speech model');
+          setStage('downloading');
+          const seconds = lap();
+          await downloadModel(setDownloadFraction);
+          result.downloadSeconds = seconds();
+          await logAutoTest(startedAt, `model downloaded in ${result.downloadSeconds}s`);
+        }
+        setStage('loading');
+        await logAutoTest(startedAt, 'loading speech model');
+        let seconds = lap();
+        const context = await initWhisper({ filePath: `file://${modelLocalPath()}` });
+        whisperContextRef.current = context;
+        result.loadSeconds = seconds();
+
+        setStage('transcribing');
+        await logAutoTest(startedAt, 'transcribing');
+        seconds = lap();
+        const { promise } = context.transcribe(`file://${plan.audioPath}`, { language: 'zh' });
+        const { result: text } = await promise;
+        result.transcribeSeconds = seconds();
+        await logAutoTest(startedAt, `transcribed in ${result.transcribeSeconds}s`);
+
+        const out = runPipeline(text);
+        setOutput(out);
+        setStage('ready');
+        Object.assign(result, {
+          rawTranscript: text,
+          prescriptionSectionFound: out.prescriptionSectionFound,
+          herbs: out.herbs.map(h => ({
+            name: h.name,
+            dosage: h.dosage,
+            highRisk: h.highRisk,
+            dosageWarning: h.dosageWarning,
+            ambiguous: h.ambiguous,
+            ambiguousWith: h.ambiguousWith ?? null,
+          })),
+          points: out.points.map(p => ({ name: p.name, ambiguous: p.ambiguous })),
+        });
+      } catch (err) {
+        result.error = formatError(err);
+        setFailure({ message: formatError(err), retry: 'setup' });
+        setStage('checking');
+      }
+      // Give the screen a moment to draw the result before CI screenshots it.
+      await new Promise<void>(resolve => setTimeout(resolve, 2500));
+      result.totalSeconds = Number(((Date.now() - startedAt) / 1000).toFixed(1));
+      await writeAutoTestResult(result);
+    },
+    [],
+  );
+
   useEffect(() => {
-    void prepare();
+    void readAutoTestPlan().then(plan => (plan ? runAutoTest(plan) : prepare()));
     return () => {
       void whisperContextRef.current?.release();
       whisperContextRef.current = null;
     };
-  }, [prepare]);
+  }, [prepare, runAutoTest]);
 
   // The 539MB download is the user's decision (data plan, storage), never
   // something to start silently at launch.

@@ -76,6 +76,73 @@ workflows:
       - mobile/screenshots/*.png
       - mobile/screenshots/*.txt
 
+  # End-to-end test on the iOS Simulator with REAL audio. The audio is never in
+  # the repo: it lives in Codemagic as secret variables TEST_AUDIO_B64_1..N
+  # (base64 pieces of one m4a), reassembled here. The app finds
+  # Documents/autotest/plan.json, downloads the speech model, transcribes the
+  # audio, and writes result.json; tools/score_e2e.js grades it.
+  ios-simulator-e2e:
+    name: iOS Simulator end-to-end (real audio)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    working_directory: mobile
+    environment:
+      node: lts
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: npm install
+      - name: Install CocoaPods dependencies
+        script: cd ios && pod install
+      - name: Build Release for iOS Simulator
+        script: |
+          xcodebuild build -workspace ios/TCMScribeMobile.xcworkspace -scheme TCMScribeMobile -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO
+      - name: Rebuild test audio from secret variables
+        script: |
+          mkdir -p e2e
+          : > e2e/audio.b64
+          i=1
+          while true; do
+            eval "PART=\${TEST_AUDIO_B64_$i:-}"
+            [ -z "$PART" ] && break
+            printf '%s' "$PART" >> e2e/audio.b64
+            i=$((i+1))
+          done
+          echo "pieces: $((i-1))"
+          [ "$i" -gt 1 ] || { echo "No TEST_AUDIO_B64_1 variable found"; exit 1; }
+          base64 --decode < e2e/audio.b64 > e2e/audio.m4a
+          rm e2e/audio.b64
+          afconvert -f WAVE -d LEI16@16000 -c 1 e2e/audio.m4a e2e/audio.wav
+          ls -l e2e
+      - name: Install app, drop test plan, run and wait for result
+        script: |
+          APP=$(find build/sim -name "TCMScribeMobile.app" -path "*Release-iphonesimulator*" | head -1)
+          DEVICE=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1)
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP"
+          DATA=$(xcrun simctl get_app_container "$DEVICE" com.tcmscribemobile data)
+          mkdir -p "$DATA/Documents/autotest" screenshots
+          cp e2e/audio.wav "$DATA/Documents/autotest/audio.wav"
+          echo '{"audio":"audio.wav"}' > "$DATA/Documents/autotest/plan.json"
+          xcrun simctl launch "$DEVICE" com.tcmscribemobile
+          # Wait up to 40 minutes (539 MB model download + transcription).
+          for n in $(seq 1 240); do
+            [ -f "$DATA/Documents/autotest/result.json" ] && break
+            [ $((n % 6)) -eq 0 ] && { echo "--- $((n/6)) min"; cat "$DATA/Documents/autotest/progress.log" 2>/dev/null | tail -3; }
+            sleep 10
+          done
+          xcrun simctl io "$DEVICE" screenshot screenshots/e2e-result.png || true
+          cp "$DATA/Documents/autotest/result.json" screenshots/result.json || true
+          cp "$DATA/Documents/autotest/progress.log" screenshots/progress.log || true
+          xcrun simctl spawn "$DEVICE" log show --last 45m --predicate 'process == "TCMScribeMobile"' --style compact | tail -80 > screenshots/app-log.txt || true
+      - name: Score the result
+        script: node ../tools/score_e2e.js screenshots/result.json | tee screenshots/score.txt
+    artifacts:
+      - screenshots/*
+      - mobile/screenshots/*
+
   # Real-device / TestFlight build. Needs an Apple Developer account ($99/yr,
   # enrolled by the account owner -- see project notes) and an
   # app_store_connect integration configured in the Codemagic dashboard
