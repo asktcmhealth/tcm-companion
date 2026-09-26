@@ -19,7 +19,9 @@ import sys
 import difflib
 import functools
 from pypinyin import lazy_pinyin
-from herb_database import all_names as herb_db_names
+from herb_database import all_names as herb_db_names, HERB_DATABASE
+from acupoint_database import ACUPOINT_DATABASE
+import re as _re
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.stderr.reconfigure(encoding="utf-8", errors="replace")
@@ -51,6 +53,27 @@ _CLINICAL_TERMS = [
 CORRECTION_VOCAB = herb_db_names() + _CLINICAL_TERMS
 
 
+def _canonical(pinyin_with_tones):
+    """'shen1 shu1' -> 'shen shu'; 'nu:3' -> 'nv' (pypinyin spells u-umlaut 'v')."""
+    return _re.sub(r"\d", "", pinyin_with_tones).replace("u:", "v")
+
+
+# The vocabulary side of every comparison uses the databases' own pinyin, not a
+# library's guess. pypinyin gets 11 of 184 vocabulary readings wrong -- 黄柏
+# 'huang bai' (should be bo), 枳壳 'zhi ke' (qiao), 行间 'hang jian' (xing),
+# 大椎 'da chui' (zhui), and every ...俞 acupoint 'yu' (shu) -- while the
+# databases hold the reviewed TCM readings. (The mobile port's pinyin-pro is
+# wrong on a DIFFERENT handful: 阿胶, 太子参, 膻中. Neither library is a safe
+# source of truth for TCM terms; the database is.) Transcript windows still go
+# through the library, where no canonical reading exists. Found by the
+# cross-implementation parity test (mobile/__tests__/parity.test.ts).
+_CANONICAL_PINYIN = {
+    term: _canonical(info["pinyin"])
+    for db in (HERB_DATABASE, ACUPOINT_DATABASE)
+    for term, info in db.items()
+}
+
+
 @functools.lru_cache(maxsize=None)
 def pinyin_str(text):
     """Converts to pinyin, preserving pypinyin's phrase-level heteronym
@@ -61,7 +84,13 @@ def pinyin_str(text):
     phrase dictionary applies; non-Chinese runs (digits/letters) are handled
     per-character since lazy_pinyin does NOT preserve 1:1 alignment across
     mixed CJK+digit text (confirmed empirically -- digits get merged into
-    unrelated tokens when mixed with Hanzi in one lazy_pinyin() call)."""
+    unrelated tokens when mixed with Hanzi in one lazy_pinyin() call).
+
+    Exact vocabulary terms short-circuit to the database's canonical reading
+    (see _CANONICAL_PINYIN above)."""
+    canonical = _CANONICAL_PINYIN.get(text)
+    if canonical is not None:
+        return canonical
     syllables = []
     i = 0
     while i < len(text):
@@ -331,7 +360,19 @@ def find_treatment_spans(text, trigger, end_re, max_span_len=250, boundary_re=No
     """
     start_re = re.compile(re.escape(trigger))
     starts = [m.end() for m in start_re.finditer(text)]
-    starts += _find_fuzzy_section_starts(text, trigger, fuzzy_threshold)
+    fuzzy_starts = _find_fuzzy_section_starts(text, trigger, fuzzy_threshold)
+    if boundary_re:
+        # A fuzzy-matched trigger only counts if the structural boundary (for
+        # herbs: a dosage number) follows soon. A real garbled "处方" is
+        # immediately followed by the herb list; an ordinary phrase that merely
+        # SOUNDS like the trigger ("情绪方面" ~ "处方", 0.80) is not -- and
+        # accepting it scopes herb-correction over consultation narrative.
+        # Exact triggers are left alone (validated on real recordings).
+        fuzzy_starts = [
+            st for st in fuzzy_starts
+            if boundary_re.search(text, st, min(len(text), st + _FUZZY_START_BOUNDARY_WINDOW))
+        ]
+    starts += fuzzy_starts
 
     spans = []
     for start in starts:
@@ -352,7 +393,28 @@ def find_treatment_spans(text, trigger, end_re, max_span_len=250, boundary_re=No
 
         if end > start:
             spans.append((start, end))
-    return spans
+    return _merge_overlapping(spans)
+
+
+# How far after a fuzzy-matched trigger the first structural boundary (dosage)
+# may be. Real prescriptions put the first herb + dose within a few characters
+# of "处方"; 40 leaves room for a short preamble without admitting narrative.
+_FUZZY_START_BOUNDARY_WINDOW = 40
+
+
+def _merge_overlapping(spans):
+    """Union overlapping/touching spans. Two triggers close together -- a
+    physician saying "我开个处方,处方如下:..." -- otherwise yield spans covering
+    the same herbs, which then get extracted twice: every herb listed two (or,
+    in the mobile port, four) times on the prescription draft, which reads as a
+    double dose. Confirmed on exactly that utterance in both engines."""
+    merged = []
+    for s, e in sorted(spans):
+        if merged and s <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], e))
+        else:
+            merged.append((s, e))
+    return merged
 
 
 def correct_spans_only(text, spans, vocab, block_phrases=None):
@@ -381,7 +443,10 @@ def correct_spans_only(text, spans, vocab, block_phrases=None):
 
 _RX_PRESCRIPTION_END = re.compile(r"服[药要]说明|不要说明|方剂基础|方剂|放弃基础|放鸡鸡杵|独活济生汤|复诊")
 _PRESCRIPTION_START_THRESHOLD = 0.85
-_DOSAGE_BOUNDARY_RE = re.compile(r"\d+\s*[gG]")
+# Must recognize the same unit spellings as pipeline.py's _DOSAGE_PATTERN, or a
+# prescription span gets trimmed short (or not found) purely because of which
+# unit the ASR model happened to write -- see the note there on 克.
+_DOSAGE_BOUNDARY_RE = re.compile(r"\d+\s*[gG克]")
 
 
 def find_prescription_spans(text, max_span_len=250):

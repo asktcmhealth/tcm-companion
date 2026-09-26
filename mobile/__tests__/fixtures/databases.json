@@ -1,0 +1,1178 @@
+{
+ "herbs": {
+  "麻黄": {
+   "pinyin": "ma2 huang2",
+   "category": "解表药",
+   "doseMin": 2,
+   "doseMax": 10,
+   "highRisk": true
+  },
+  "桂枝": {
+   "pinyin": "gui4 zhi1",
+   "category": "解表药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "紫苏叶": {
+   "pinyin": "zi3 su1 ye4",
+   "category": "解表药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "生姜": {
+   "pinyin": "sheng1 jiang1",
+   "category": "解表药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "荆芥": {
+   "pinyin": "jing1 jie4",
+   "category": "解表药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "防风": {
+   "pinyin": "fang2 feng1",
+   "category": "解表药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "羌活": {
+   "pinyin": "qiang1 huo2",
+   "category": "解表药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "白芷": {
+   "pinyin": "bai2 zhi3",
+   "category": "解表药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "细辛": {
+   "pinyin": "xi4 xin1",
+   "category": "解表药",
+   "doseMin": 1,
+   "doseMax": 3,
+   "highRisk": true
+  },
+  "薄荷": {
+   "pinyin": "bo4 he2",
+   "category": "解表药",
+   "doseMin": 3,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "菊花": {
+   "pinyin": "ju2 hua1",
+   "category": "解表药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "桑叶": {
+   "pinyin": "sang1 ye4",
+   "category": "解表药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "柴胡": {
+   "pinyin": "chai2 hu2",
+   "category": "解表药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "葛根": {
+   "pinyin": "ge2 gen1",
+   "category": "解表药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "石膏": {
+   "pinyin": "shi2 gao1",
+   "category": "清热药",
+   "doseMin": 15,
+   "doseMax": 60,
+   "highRisk": false
+  },
+  "知母": {
+   "pinyin": "zhi1 mu3",
+   "category": "清热药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "栀子": {
+   "pinyin": "zhi1 zi3",
+   "category": "清热药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "黄芩": {
+   "pinyin": "huang2 qin2",
+   "category": "清热药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "黄连": {
+   "pinyin": "huang2 lian2",
+   "category": "清热药",
+   "doseMin": 2,
+   "doseMax": 5,
+   "highRisk": false
+  },
+  "黄柏": {
+   "pinyin": "huang2 bo4",
+   "category": "清热药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "金银花": {
+   "pinyin": "jin1 yin2 hua1",
+   "category": "清热药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "连翘": {
+   "pinyin": "lian2 qiao4",
+   "category": "清热药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "板蓝根": {
+   "pinyin": "ban3 lan2 gen1",
+   "category": "清热药",
+   "doseMin": 9,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "蒲公英": {
+   "pinyin": "pu2 gong1 ying1",
+   "category": "清热药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "鱼腥草": {
+   "pinyin": "yu2 xing1 cao3",
+   "category": "清热药",
+   "doseMin": 15,
+   "doseMax": 25,
+   "highRisk": false
+  },
+  "牡丹皮": {
+   "pinyin": "mu3 dan1 pi2",
+   "category": "清热药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "赤芍": {
+   "pinyin": "chi4 shao2",
+   "category": "清热药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "紫花地丁": {
+   "pinyin": "zi3 hua1 di4 ding1",
+   "category": "清热药",
+   "doseMin": 15,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "生地黄": {
+   "pinyin": "sheng1 di4 huang2",
+   "category": "清热药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "大黄": {
+   "pinyin": "da4 huang2",
+   "category": "泻下药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": true
+  },
+  "芒硝": {
+   "pinyin": "mang2 xiao1",
+   "category": "泻下药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": true
+  },
+  "独活": {
+   "pinyin": "du2 huo2",
+   "category": "祛风湿药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "桑寄生": {
+   "pinyin": "sang1 ji4 sheng1",
+   "category": "祛风湿药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "秦艽": {
+   "pinyin": "qin2 jiao1",
+   "category": "祛风湿药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "威灵仙": {
+   "pinyin": "wei1 ling2 xian1",
+   "category": "祛风湿药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "苍术": {
+   "pinyin": "cang1 zhu2",
+   "category": "化湿药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "厚朴": {
+   "pinyin": "hou4 po4",
+   "category": "化湿药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "藿香": {
+   "pinyin": "huo4 xiang1",
+   "category": "化湿药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "砂仁": {
+   "pinyin": "sha1 ren2",
+   "category": "化湿药",
+   "doseMin": 3,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "白豆蔻": {
+   "pinyin": "bai2 dou4 kou4",
+   "category": "化湿药",
+   "doseMin": 3,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "茯苓": {
+   "pinyin": "fu2 ling2",
+   "category": "利水渗湿药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "薏苡仁": {
+   "pinyin": "yi4 yi3 ren2",
+   "category": "利水渗湿药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "泽泻": {
+   "pinyin": "ze2 xie4",
+   "category": "利水渗湿药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "车前子": {
+   "pinyin": "che1 qian2 zi3",
+   "category": "利水渗湿药",
+   "doseMin": 9,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "猪苓": {
+   "pinyin": "zhu1 ling2",
+   "category": "利水渗湿药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "滑石": {
+   "pinyin": "hua2 shi2",
+   "category": "利水渗湿药",
+   "doseMin": 10,
+   "doseMax": 20,
+   "highRisk": false
+  },
+  "茵陈": {
+   "pinyin": "yin1 chen2",
+   "category": "利水渗湿药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "附子": {
+   "pinyin": "fu4 zi3",
+   "category": "温里药",
+   "doseMin": 3,
+   "doseMax": 15,
+   "highRisk": true
+  },
+  "制附子": {
+   "pinyin": "zhi4 fu4 zi3",
+   "category": "温里药",
+   "doseMin": 3,
+   "doseMax": 15,
+   "highRisk": true
+  },
+  "干姜": {
+   "pinyin": "gan1 jiang1",
+   "category": "温里药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "肉桂": {
+   "pinyin": "rou4 gui4",
+   "category": "温里药",
+   "doseMin": 1,
+   "doseMax": 5,
+   "highRisk": false
+  },
+  "吴茱萸": {
+   "pinyin": "wu2 zhu1 yu2",
+   "category": "温里药",
+   "doseMin": 2,
+   "doseMax": 5,
+   "highRisk": false
+  },
+  "小茴香": {
+   "pinyin": "xiao3 hui2 xiang1",
+   "category": "温里药",
+   "doseMin": 3,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "陈皮": {
+   "pinyin": "chen2 pi2",
+   "category": "理气药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "枳壳": {
+   "pinyin": "zhi3 qiao4",
+   "category": "理气药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "枳实": {
+   "pinyin": "zhi3 shi2",
+   "category": "理气药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "木香": {
+   "pinyin": "mu4 xiang1",
+   "category": "理气药",
+   "doseMin": 3,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "香附": {
+   "pinyin": "xiang1 fu4",
+   "category": "理气药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "郁金": {
+   "pinyin": "yu4 jin1",
+   "category": "理气药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "山楂": {
+   "pinyin": "shan1 zha1",
+   "category": "消食药",
+   "doseMin": 9,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "神曲": {
+   "pinyin": "shen2 qu1",
+   "category": "消食药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "麦芽": {
+   "pinyin": "mai4 ya2",
+   "category": "消食药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "鸡内金": {
+   "pinyin": "ji1 nei4 jin1",
+   "category": "消食药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "三七": {
+   "pinyin": "san1 qi1",
+   "category": "止血药",
+   "doseMin": 3,
+   "doseMax": 9,
+   "highRisk": false
+  },
+  "白及": {
+   "pinyin": "bai2 ji2",
+   "category": "止血药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "川芎": {
+   "pinyin": "chuan1 xiong1",
+   "category": "活血化瘀药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "丹参": {
+   "pinyin": "dan1 shen1",
+   "category": "活血化瘀药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "红花": {
+   "pinyin": "hong2 hua1",
+   "category": "活血化瘀药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "桃仁": {
+   "pinyin": "tao2 ren2",
+   "category": "活血化瘀药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "延胡索": {
+   "pinyin": "yan2 hu2 suo3",
+   "category": "活血化瘀药",
+   "doseMin": 3,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "益母草": {
+   "pinyin": "yi4 mu3 cao3",
+   "category": "活血化瘀药",
+   "doseMin": 10,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "牛膝": {
+   "pinyin": "niu2 xi1",
+   "category": "活血化瘀药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "泽兰": {
+   "pinyin": "ze2 lan2",
+   "category": "活血化瘀药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "半夏": {
+   "pinyin": "ban4 xia4",
+   "category": "化痰止咳平喘药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": true
+  },
+  "川贝母": {
+   "pinyin": "chuan1 bei4 mu3",
+   "category": "化痰止咳平喘药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "浙贝母": {
+   "pinyin": "zhe4 bei4 mu3",
+   "category": "化痰止咳平喘药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "桔梗": {
+   "pinyin": "jie2 geng3",
+   "category": "化痰止咳平喘药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "杏仁": {
+   "pinyin": "xing4 ren2",
+   "category": "化痰止咳平喘药",
+   "doseMin": 5,
+   "doseMax": 10,
+   "highRisk": true
+  },
+  "紫苏子": {
+   "pinyin": "zi3 su1 zi3",
+   "category": "化痰止咳平喘药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "瓜蒌": {
+   "pinyin": "gua1 lou2",
+   "category": "化痰止咳平喘药",
+   "doseMin": 10,
+   "doseMax": 20,
+   "highRisk": false
+  },
+  "酸枣仁": {
+   "pinyin": "suan1 zao3 ren2",
+   "category": "安神药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "柏子仁": {
+   "pinyin": "bai3 zi3 ren2",
+   "category": "安神药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "远志": {
+   "pinyin": "yuan3 zhi4",
+   "category": "安神药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "合欢皮": {
+   "pinyin": "he2 huan1 pi2",
+   "category": "安神药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "龙骨": {
+   "pinyin": "long2 gu3",
+   "category": "安神药",
+   "doseMin": 15,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "牡蛎": {
+   "pinyin": "mu3 li4",
+   "category": "安神药",
+   "doseMin": 15,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "天麻": {
+   "pinyin": "tian1 ma2",
+   "category": "平肝息风药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "钩藤": {
+   "pinyin": "gou1 teng2",
+   "category": "平肝息风药",
+   "doseMin": 10,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "石决明": {
+   "pinyin": "shi2 jue2 ming2",
+   "category": "平肝息风药",
+   "doseMin": 10,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "石菖蒲": {
+   "pinyin": "shi2 chang1 pu2",
+   "category": "开窍药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "人参": {
+   "pinyin": "ren2 shen1",
+   "category": "补虚药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "西洋参": {
+   "pinyin": "xi1 yang2 shen1",
+   "category": "补虚药",
+   "doseMin": 3,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "党参": {
+   "pinyin": "dang3 shen1",
+   "category": "补虚药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "太子参": {
+   "pinyin": "tai4 zi3 shen1",
+   "category": "补虚药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "黄芪": {
+   "pinyin": "huang2 qi2",
+   "category": "补虚药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "白术": {
+   "pinyin": "bai2 zhu2",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "山药": {
+   "pinyin": "shan1 yao4",
+   "category": "补虚药",
+   "doseMin": 15,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "甘草": {
+   "pinyin": "gan1 cao3",
+   "category": "补虚药",
+   "doseMin": 2,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "炙甘草": {
+   "pinyin": "zhi4 gan1 cao3",
+   "category": "补虚药",
+   "doseMin": 2,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "大枣": {
+   "pinyin": "da4 zao3",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "当归": {
+   "pinyin": "dang1 gui1",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "熟地黄": {
+   "pinyin": "shu2 di4 huang2",
+   "category": "补虚药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  },
+  "白芍": {
+   "pinyin": "bai2 shao2",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "何首乌": {
+   "pinyin": "he2 shou3 wu1",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": true
+  },
+  "阿胶": {
+   "pinyin": "e1 jiao1",
+   "category": "补虚药",
+   "doseMin": 3,
+   "doseMax": 9,
+   "highRisk": false
+  },
+  "北沙参": {
+   "pinyin": "bei3 sha1 shen1",
+   "category": "补虚药",
+   "doseMin": 5,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "南沙参": {
+   "pinyin": "nan2 sha1 shen1",
+   "category": "补虚药",
+   "doseMin": 9,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "麦冬": {
+   "pinyin": "mai4 dong1",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "天冬": {
+   "pinyin": "tian1 dong1",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "百合": {
+   "pinyin": "bai3 he2",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "枸杞子": {
+   "pinyin": "gou3 qi3 zi3",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "女贞子": {
+   "pinyin": "nu:3 zhen1 zi3",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "墨旱莲": {
+   "pinyin": "mo4 han4 lian2",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "山茱萸": {
+   "pinyin": "shan1 zhu1 yu2",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "杜仲": {
+   "pinyin": "du4 zhong4",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "菟丝子": {
+   "pinyin": "tu4 si1 zi3",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 12,
+   "highRisk": false
+  },
+  "五味子": {
+   "pinyin": "wu3 wei4 zi3",
+   "category": "补虚药",
+   "doseMin": 2,
+   "doseMax": 6,
+   "highRisk": false
+  },
+  "淫羊藿": {
+   "pinyin": "yin2 yang2 huo4",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "鹿角胶": {
+   "pinyin": "lu4 jiao3 jiao1",
+   "category": "补虚药",
+   "doseMin": 3,
+   "doseMax": 9,
+   "highRisk": false
+  },
+  "肉苁蓉": {
+   "pinyin": "rou4 cong1 rong2",
+   "category": "补虚药",
+   "doseMin": 6,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "巴戟天": {
+   "pinyin": "ba1 ji3 tian1",
+   "category": "补虚药",
+   "doseMin": 3,
+   "doseMax": 10,
+   "highRisk": false
+  },
+  "五倍子": {
+   "pinyin": "wu3 bei4 zi3",
+   "category": "收涩药",
+   "doseMin": 3,
+   "doseMax": 9,
+   "highRisk": false
+  },
+  "芡实": {
+   "pinyin": "qian4 shi2",
+   "category": "收涩药",
+   "doseMin": 9,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "莲子": {
+   "pinyin": "lian2 zi3",
+   "category": "收涩药",
+   "doseMin": 6,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "茯神": {
+   "pinyin": "fu2 shen2",
+   "category": "安神药",
+   "doseMin": 9,
+   "doseMax": 15,
+   "highRisk": false
+  },
+  "首乌藤": {
+   "pinyin": "shou3 wu1 teng2",
+   "category": "安神药",
+   "doseMin": 9,
+   "doseMax": 30,
+   "highRisk": false
+  }
+ },
+ "acupoints": {
+  "列缺": {
+   "pinyin": "lie4 que1",
+   "code": "LU7",
+   "meridian": "肺经"
+  },
+  "太渊": {
+   "pinyin": "tai4 yuan1",
+   "code": "LU9",
+   "meridian": "肺经"
+  },
+  "尺泽": {
+   "pinyin": "chi3 ze2",
+   "code": "LU5",
+   "meridian": "肺经"
+  },
+  "少商": {
+   "pinyin": "shao4 shang1",
+   "code": "LU11",
+   "meridian": "肺经"
+  },
+  "合谷": {
+   "pinyin": "he2 gu3",
+   "code": "LI4",
+   "meridian": "大肠经"
+  },
+  "曲池": {
+   "pinyin": "qu1 chi2",
+   "code": "LI11",
+   "meridian": "大肠经"
+  },
+  "肩髃": {
+   "pinyin": "jian1 yu2",
+   "code": "LI15",
+   "meridian": "大肠经"
+  },
+  "迎香": {
+   "pinyin": "ying2 xiang1",
+   "code": "LI20",
+   "meridian": "大肠经"
+  },
+  "足三里": {
+   "pinyin": "zu2 san1 li3",
+   "code": "ST36",
+   "meridian": "胃经"
+  },
+  "天枢": {
+   "pinyin": "tian1 shu1",
+   "code": "ST25",
+   "meridian": "胃经"
+  },
+  "丰隆": {
+   "pinyin": "feng1 long2",
+   "code": "ST40",
+   "meridian": "胃经"
+  },
+  "颊车": {
+   "pinyin": "jia2 che1",
+   "code": "ST6",
+   "meridian": "胃经"
+  },
+  "内庭": {
+   "pinyin": "nei4 ting2",
+   "code": "ST44",
+   "meridian": "胃经"
+  },
+  "下关": {
+   "pinyin": "xia4 guan1",
+   "code": "ST7",
+   "meridian": "胃经"
+  },
+  "三阴交": {
+   "pinyin": "san1 yin1 jiao1",
+   "code": "SP6",
+   "meridian": "脾经"
+  },
+  "阴陵泉": {
+   "pinyin": "yin1 ling2 quan2",
+   "code": "SP9",
+   "meridian": "脾经"
+  },
+  "血海": {
+   "pinyin": "xue4 hai3",
+   "code": "SP10",
+   "meridian": "脾经"
+  },
+  "太白": {
+   "pinyin": "tai4 bai2",
+   "code": "SP3",
+   "meridian": "脾经"
+  },
+  "神门": {
+   "pinyin": "shen2 men2",
+   "code": "HT7",
+   "meridian": "心经"
+  },
+  "少海": {
+   "pinyin": "shao4 hai3",
+   "code": "HT3",
+   "meridian": "心经"
+  },
+  "后溪": {
+   "pinyin": "hou4 xi1",
+   "code": "SI3",
+   "meridian": "小肠经"
+  },
+  "天宗": {
+   "pinyin": "tian1 zong1",
+   "code": "SI11",
+   "meridian": "小肠经"
+  },
+  "肾俞": {
+   "pinyin": "shen4 shu1",
+   "code": "BL23",
+   "meridian": "膀胱经"
+  },
+  "委中": {
+   "pinyin": "wei3 zhong1",
+   "code": "BL40",
+   "meridian": "膀胱经"
+  },
+  "昆仑": {
+   "pinyin": "kun1 lun2",
+   "code": "BL60",
+   "meridian": "膀胱经"
+  },
+  "膈俞": {
+   "pinyin": "ge2 shu1",
+   "code": "BL17",
+   "meridian": "膀胱经"
+  },
+  "脾俞": {
+   "pinyin": "pi2 shu1",
+   "code": "BL20",
+   "meridian": "膀胱经"
+  },
+  "肺俞": {
+   "pinyin": "fei4 shu1",
+   "code": "BL13",
+   "meridian": "膀胱经"
+  },
+  "心俞": {
+   "pinyin": "xin1 shu1",
+   "code": "BL15",
+   "meridian": "膀胱经"
+  },
+  "肝俞": {
+   "pinyin": "gan1 shu1",
+   "code": "BL18",
+   "meridian": "膀胱经"
+  },
+  "大肠俞": {
+   "pinyin": "da4 chang2 shu1",
+   "code": "BL25",
+   "meridian": "膀胱经"
+  },
+  "太溪": {
+   "pinyin": "tai4 xi1",
+   "code": "KI3",
+   "meridian": "肾经"
+  },
+  "涌泉": {
+   "pinyin": "yong3 quan2",
+   "code": "KI1",
+   "meridian": "肾经"
+  },
+  "照海": {
+   "pinyin": "zhao4 hai3",
+   "code": "KI6",
+   "meridian": "肾经"
+  },
+  "复溜": {
+   "pinyin": "fu4 liu1",
+   "code": "KI7",
+   "meridian": "肾经"
+  },
+  "内关": {
+   "pinyin": "nei4 guan1",
+   "code": "PC6",
+   "meridian": "心包经"
+  },
+  "劳宫": {
+   "pinyin": "lao2 gong1",
+   "code": "PC8",
+   "meridian": "心包经"
+  },
+  "外关": {
+   "pinyin": "wai4 guan1",
+   "code": "TE5",
+   "meridian": "三焦经"
+  },
+  "丝竹空": {
+   "pinyin": "si1 zhu2 kong1",
+   "code": "TE23",
+   "meridian": "三焦经"
+  },
+  "风池": {
+   "pinyin": "feng1 chi2",
+   "code": "GB20",
+   "meridian": "胆经"
+  },
+  "阳陵泉": {
+   "pinyin": "yang2 ling2 quan2",
+   "code": "GB34",
+   "meridian": "胆经"
+  },
+  "肩井": {
+   "pinyin": "jian1 jing3",
+   "code": "GB21",
+   "meridian": "胆经"
+  },
+  "环跳": {
+   "pinyin": "huan2 tiao4",
+   "code": "GB30",
+   "meridian": "胆经"
+  },
+  "悬钟": {
+   "pinyin": "xuan2 zhong1",
+   "code": "GB39",
+   "meridian": "胆经"
+  },
+  "太冲": {
+   "pinyin": "tai4 chong1",
+   "code": "LR3",
+   "meridian": "肝经"
+  },
+  "期门": {
+   "pinyin": "qi1 men2",
+   "code": "LR14",
+   "meridian": "肝经"
+  },
+  "行间": {
+   "pinyin": "xing2 jian1",
+   "code": "LR2",
+   "meridian": "肝经"
+  },
+  "关元": {
+   "pinyin": "guan1 yuan2",
+   "code": "CV4",
+   "meridian": "任脉"
+  },
+  "气海": {
+   "pinyin": "qi4 hai3",
+   "code": "CV6",
+   "meridian": "任脉"
+  },
+  "中脘": {
+   "pinyin": "zhong1 wan3",
+   "code": "CV12",
+   "meridian": "任脉"
+  },
+  "膻中": {
+   "pinyin": "dan4 zhong1",
+   "code": "CV17",
+   "meridian": "任脉"
+  },
+  "中极": {
+   "pinyin": "zhong1 ji2",
+   "code": "CV3",
+   "meridian": "任脉"
+  },
+  "百会": {
+   "pinyin": "bai3 hui4",
+   "code": "GV20",
+   "meridian": "督脉"
+  },
+  "大椎": {
+   "pinyin": "da4 zhui1",
+   "code": "GV14",
+   "meridian": "督脉"
+  },
+  "命门": {
+   "pinyin": "ming4 men2",
+   "code": "GV4",
+   "meridian": "督脉"
+  },
+  "人中": {
+   "pinyin": "ren2 zhong1",
+   "code": "GV26",
+   "meridian": "督脉"
+  },
+  "印堂": {
+   "pinyin": "yin4 tang2",
+   "code": "EX-HN3",
+   "meridian": "经外奇穴"
+  },
+  "太阳": {
+   "pinyin": "tai4 yang2",
+   "code": "EX-HN5",
+   "meridian": "经外奇穴"
+  }
+ }
+}

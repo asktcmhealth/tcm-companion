@@ -120,7 +120,7 @@ export const HERB_DATABASE: Record<string, HerbInfo> = {
   "北沙参": { pinyin: "bei3 sha1 shen1", category: "补虚药", doseMin: 5, doseMax: 12, highRisk: false },
   "南沙参": { pinyin: "nan2 sha1 shen1", category: "补虚药", doseMin: 9, doseMax: 15, highRisk: false },
   "麦冬": { pinyin: "mai4 dong1", category: "补虚药", doseMin: 6, doseMax: 12, highRisk: false },
-  "天冬": { pinyin: "tian1 men2 dong1", category: "补虚药", doseMin: 6, doseMax: 12, highRisk: false },
+  "天冬": { pinyin: "tian1 dong1", category: "补虚药", doseMin: 6, doseMax: 12, highRisk: false },
   "百合": { pinyin: "bai3 he2", category: "补虚药", doseMin: 6, doseMax: 12, highRisk: false },
   "枸杞子": { pinyin: "gou3 qi3 zi3", category: "补虚药", doseMin: 6, doseMax: 12, highRisk: false },
   "女贞子": { pinyin: "nu:3 zhen1 zi3", category: "补虚药", doseMin: 6, doseMax: 12, highRisk: false },

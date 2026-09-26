@@ -1,0 +1,774 @@
+{
+ "script1_faster_whisper": {
+  "input": "今天来的病人是一位42岁的女性患者她的主宿是最近两个星期持续感到疲乏休得也有一点酸痛她说最近工作压力比较大睡眠质量也不好容易半夜醒来我问她饮食情况她说饮食情况还好但是喜欢吃冷的东西经常喝冰水餐餐不规律大便方面她说每天一次但是比较软有时候不成型小便正常没有特别的问题情绪方面她最近比较容易烦躁有时候会莫名其妙的叹气月经周期基本正常但是金钱会有轻微的凶涨接下来我检查舌相和脉相舌枕舌指淡红舌体稍胖偏有齿痕胎白腻舌中部胎稍厚脉枕脉弦细左关脉稍悬右关脉如环两指脉沉根据四诊所见这位病人的辩证是干预气质脾虚失胜志泽疏干理气健脾化湿处方如下柴胡10g白草15g当归10g白竹15g茯苓20g黄芪30g党参15g橙皮6g半夏10g干草6g益元20g沙仁5g后下方济基础下药散和四菌子汤加减服药说明7天每天两次饭后半小时服用温敷复诊下周同一时间第二个病人男性55岁主宿室膝盖疼痛三个月舌指暗红鱿鱼斑胎薄白脉象色良齿脉沉细辩证为肾阳虚寒失闭阻加油血余处方致富者9g先煎30分钟肉桂5g后下手底黄20g山猪鱼12g肚重15g牛蝎15g毒活10g三季生退肌肝腺20g川凶10g红花6g桃仁10g黏糊索12g治肝草6g放鸡鸡杵毒活计生汤和桂腹地黄丸加减服药说明14天每天两次饭前温敷The patient should avoid coldfood and drink during the treatment period请注意保暖避免受寒",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "柴胡",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白芍",
+    "dosage": 15,
+    "ambiguous": true,
+    "ambiguousWith": "甘草"
+   },
+   {
+    "name": "当归",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白术",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "茯苓",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "黄芪",
+    "dosage": 30,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "党参",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "陈皮",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "半夏",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "砂仁",
+    "dosage": 5,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "制附子",
+    "dosage": 9,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "肉桂",
+    "dosage": 5,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "熟地黄",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "山茱萸",
+    "dosage": 12,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "杜仲",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "牛膝",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "独活",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桑寄生",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "川芎",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "红花",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桃仁",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "延胡索",
+    "dosage": 12,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "炙甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "script2_faster_whisper": {
+  "input": "今天来的病人叫张三,NRIC是S987643G,电话是81234567他是约30岁的男性患者,主宿是反复咳嗽两个星期,痰多色白,稍微有点气喘Activities make it worse,晚上咳嗽比较厉害,他说最近食欲还可以大便正常,小便也正常,睡眠方面因为咳嗽经常被吵醒,睡不好情绪方面还算稳定,没有特别烦躁接下来我检查蛇像跟脉象,蛇枕,蛇蛋红,胎白腻,蛇体正常,大小没有齿痕脉枕,脉滑,右寸,脉幅,左关,脉旋,两指,脉承系根据市诊所见,周围病人的诊断,辩证是风寒,放肺痰肝臟是阻肺,治者疏风,散寒,化痰止咳除方如下,芒黄6g,桂枝10g,杏仁10g,甘草6g苍蜍10g,垢破9g后下,半橙皮6g,半虾10g,茯苓15g,结果10g植树籽10g,植被母10g,瓜萝15g放鸡鸡储备3澳汤和2层汤加减服务要说明5天每天2次饭后温服,复诊5天后同一时间请注意保暖,避免受寒,多喝温水",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "麻黄",
+    "dosage": 6,
+    "ambiguous": true,
+    "ambiguousWith": "大黄"
+   },
+   {
+    "name": "桂枝",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "杏仁",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "苍术",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "厚朴",
+    "dosage": 9,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "陈皮",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "半夏",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "茯苓",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "紫苏子",
+    "dosage": 10,
+    "ambiguous": true,
+    "ambiguousWith": "制附子"
+   },
+   {
+    "name": "浙贝母",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "瓜蒌",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "script1_medium_whisper_cpp": {
+  "input": "今天来的病人是一位42岁的女性患者,她的主宿室最近两个星期持续感到疲乏,胸口也有点酸痛。她说最近工作压力比较大,睡眠质量也不好,容易半夜醒来。我问她饮食情况,她说胃口还可以,但是喜欢吃冷的东西,经常喝冰水,三餐不规律。大便方面,她说每天一次,但是比较软,有时候不成型,小便正常,没有特别的问题。情绪方面,她最近比较容易烦躁,有时候会莫名其妙的叹气,月经周期基本正常,但是金钱会有轻微的胸胀。接下来我检查舌象和脉象。舌疹,舌指淡红,舌体稍胖,边游齿痕,胎白腻,舌中部胎稍厚。脉疹,脉弦细,左关脉稍旋,右关脉如缓,两指脉沉。根据四诊所见,这位病人的辨证是肝育器致皮须失胜,质责书肝理器、腱皮化湿,厨房如下。财糊10克,白草15克,当归10克,白竹15克,福林20克,黄芪30克,党参15克,陈皮6克,半夏10克,甘草6克,艺人20克,杀人5克后下。方剂基础,下药散和四菌子,汤加减。服药说明7天每天2次,饭后半小时服用。温服复诊,下周同一时间。第二个病人,男性55岁,主宿室膝盖疼痛3个月,舌指暗红,友语般胎薄白,脉象色,量尺脉沉细。辨证为,肾阳虚,含湿病组,加油血瘀。厨房,致腹者9克,先煎30分钟,肉桂5克后下,手地黄20克,山椒鱼12克,肚胖15克,牛蜥15克,毒活10克,三寄生20克,春胸10克,红花6克,桃仁10克,盐胡萎12克,制甘草6克。方剂基础,毒活寄生汤和贵父地黄碗加减。服药说明,14天每天2次,饭前温服。患者应该避免冷却,食物和饮料在治疗期间。请注意保暖,避免受寒。",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "柴胡",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白芍",
+    "dosage": 15,
+    "ambiguous": true,
+    "ambiguousWith": "甘草"
+   },
+   {
+    "name": "当归",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白术",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "茯苓",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "黄芪",
+    "dosage": 30,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "党参",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "陈皮",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "半夏",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "薏苡仁",
+    "dosage": 20,
+    "ambiguous": true,
+    "ambiguousWith": "茵陈"
+   },
+   {
+    "name": "砂仁",
+    "dosage": 5,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "制附子",
+    "dosage": 9,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "肉桂",
+    "dosage": 5,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "熟地黄",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "山药",
+    "dosage": 12,
+    "ambiguous": true,
+    "ambiguousWith": "秦艽"
+   },
+   {
+    "name": "牛膝",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "独活",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桑寄生",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "川芎",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "红花",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桃仁",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "延胡索",
+    "dosage": 12,
+    "ambiguous": true,
+    "ambiguousWith": "苍术"
+   },
+   {
+    "name": "炙甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "clean_script1": {
+  "input": "处方如下：柴胡10g白芍15g当归10g白术15g茯苓20g黄芪30g党参15g陈皮6g半夏10g甘草6g薏苡仁20g砂仁5g后下方剂基础：逍遥散合四君子汤加减。服药说明：七天。处方：制附子9g先煎30分钟肉桂5g后下熟地黄20g山茱萸12g杜仲15g牛膝15g独活10g桑寄生20g川芎10g红花6g桃仁10g延胡索12g炙甘草6g方剂基础：独活寄生汤加减。服药说明：十四天。",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "柴胡",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白芍",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "当归",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白术",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "茯苓",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "黄芪",
+    "dosage": 30,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "党参",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "陈皮",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "半夏",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "薏苡仁",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "砂仁",
+    "dosage": 5,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "制附子",
+    "dosage": 9,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "肉桂",
+    "dosage": 5,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "熟地黄",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "山茱萸",
+    "dosage": 12,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "杜仲",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "牛膝",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "独活",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桑寄生",
+    "dosage": 20,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "川芎",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "红花",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桃仁",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "延胡索",
+    "dosage": 12,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "炙甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "clean_script2": {
+  "input": "处方如下：麻黄6g桂枝10g杏仁10g甘草6g苍术10g厚朴9g后下陈皮6g半夏10g茯苓15g桔梗10g紫苏子10g浙贝母10g瓜蒌15g方剂基础：三拗汤合二陈汤加减。服药说明：五天。",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "麻黄",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桂枝",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "杏仁",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "甘草",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "苍术",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "厚朴",
+    "dosage": 9,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "陈皮",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "半夏",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "茯苓",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桔梗",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "紫苏子",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "浙贝母",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "瓜蒌",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "clean_gram_character": {
+  "input": "处方如下：麻黄6克桂枝10克杏仁10克方剂基础：三拗汤。",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "麻黄",
+    "dosage": 6,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "桂枝",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "杏仁",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "acupuncture_clean": {
+  "input": "患者主诉肩周炎。取穴：合谷双侧，足三里左，三阴交右，肩髃，曲池。留针30分钟。疗程：每周两次。",
+  "prescriptionSectionFound": false,
+  "herbs": [],
+  "points": [
+   {
+    "name": "合谷",
+    "laterality": "双侧",
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "足三里",
+    "laterality": "左",
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "三阴交",
+    "laterality": "右",
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "肩髃",
+    "laterality": null,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "曲池",
+    "laterality": null,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ]
+ },
+ "acupuncture_garbled": {
+  "input": "患者主诉肩周炎。取穴：合古双侧，足三里左，三阴叫右，肩雨，去池。留针30分钟。疗程：每周两次。",
+  "prescriptionSectionFound": false,
+  "herbs": [],
+  "points": [
+   {
+    "name": "合谷",
+    "laterality": "双侧",
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "足三里",
+    "laterality": "左",
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "三阴交",
+    "laterality": "右",
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "肩髃",
+    "laterality": null,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "曲池",
+    "laterality": null,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ]
+ },
+ "double_trigger": {
+  "input": "我给你开个处方，处方如下：柴胡10g白芍15g当归10g方剂基础：逍遥散。服药说明：七天。",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "柴胡",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白芍",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "当归",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "narrative_sounds_like_trigger": {
+  "input": "情绪方面她最近比较容易烦躁有时候会莫名其妙的叹气月经周期基本正常处方如下：柴胡10g白芍15g方剂基础：逍遥散。",
+  "prescriptionSectionFound": true,
+  "herbs": [
+   {
+    "name": "柴胡",
+    "dosage": 10,
+    "ambiguous": false,
+    "ambiguousWith": null
+   },
+   {
+    "name": "白芍",
+    "dosage": 15,
+    "ambiguous": false,
+    "ambiguousWith": null
+   }
+  ],
+  "points": []
+ },
+ "no_prescription_trigger": {
+  "input": "今天病人咳嗽两个星期，痰多色白，舌淡红，苔白腻，脉滑。",
+  "prescriptionSectionFound": false,
+  "herbs": [],
+  "points": []
+ }
+}

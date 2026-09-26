@@ -164,7 +164,7 @@ HERB_DATABASE = {
     "北沙参": {"pinyin": "bei3 sha1 shen1", "category": "补虚药", "dose_g": (5, 12), "high_risk": False},
     "南沙参": {"pinyin": "nan2 sha1 shen1", "category": "补虚药", "dose_g": (9, 15), "high_risk": False},
     "麦冬":   {"pinyin": "mai4 dong1",   "category": "补虚药", "dose_g": (6, 12),  "high_risk": False},
-    "天冬":   {"pinyin": "tian1 men2 dong1", "category": "补虚药", "dose_g": (6, 12), "high_risk": False},
+    "天冬":   {"pinyin": "tian1 dong1", "category": "补虚药", "dose_g": (6, 12), "high_risk": False},
     "百合":   {"pinyin": "bai3 he2",     "category": "补虚药", "dose_g": (6, 12),  "high_risk": False},
     "枸杞子": {"pinyin": "gou3 qi3 zi3", "category": "补虚药", "dose_g": (6, 12),  "high_risk": False},
     "女贞子": {"pinyin": "nu:3 zhen1 zi3", "category": "补虚药", "dose_g": (6, 12), "high_risk": False},

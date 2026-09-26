@@ -55,7 +55,13 @@ def transcribe_whisper(audio_path):
     return result["text"]
 
 
-_DOSAGE_PATTERN = re.compile(r"(\d+)\s*[gG]")
+# 克 (the Chinese character for "gram") as well as Latin g: confirmed on the
+# mobile port that swapping the ASR model changes which one Whisper writes --
+# ggml-medium emits 克 where large-v3 emits g -- and without it a perfectly
+# good transcript extracts ZERO herbs (every dosage number goes invisible).
+# Desktop's current model happens to write "g", so this is insurance against a
+# model/config change, not a fix for something failing today.
+_DOSAGE_PATTERN = re.compile(r"(\d+)\s*[gG克]")
 
 
 def extract_prescription(text, edits=None):

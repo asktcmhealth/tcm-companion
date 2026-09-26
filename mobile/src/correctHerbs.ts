@@ -15,11 +15,42 @@ import { ACUPOINT_DATABASE, allAcupointNames } from './acupointDatabase';
 
 const pinyinCache = new Map<string, string>();
 
-function pinyinStr(text: string): string {
+// TONE-INSENSITIVE on purpose -- the desktop engine calls pypinyin's
+// lazy_pinyin() in its default toneless mode, so "厨房" and "处方" are the
+// identical string "chu fang" there. This port originally used
+// toneType: 'num' (chu2 fang2 vs chu3 fang1), which made every score lower and
+// noisier than desktop's, and every threshold/margin tuned on it a different
+// quantity from the desktop's. That mismatch is what made "厨房" (a very common
+// whisper.cpp mishearing of "处方") score only 0.80 and led to lowering the
+// trigger threshold -- which then let ordinary phrases like "情绪方面" through
+// as fake prescription triggers. Whisper's characteristic errors are
+// homophone substitutions that often get the tone wrong too, so ignoring
+// tones is also simply the better model of them. __tests__/parity.test.ts
+// keeps this in lock-step with the Python source.
+//
+// The vocabulary side of every comparison uses the databases' own pinyin, not a
+// library's guess (mirrors _CANONICAL_PINYIN in the Python engine). Both
+// libraries mis-read some TCM terms and they mis-read DIFFERENT ones:
+// pinyin-pro gets 阿胶 ('a jiao', should be e), 太子参 ('can', should be shen)
+// and 膻中 ('shan', should be dan) wrong; pypinyin gets 黄柏, 枳壳, 行间, 大椎 and
+// every ...俞 acupoint wrong. The reviewed readings live in the databases.
+// Transcript windows still go through pinyin-pro, where no canonical reading
+// exists. Found by the cross-implementation parity test.
+const canonicalPinyin = (withTones: string): string => withTones.replace(/\d/g, '').replace(/u:/g, 'v');
+
+const CANONICAL_PINYIN: Record<string, string> = {};
+for (const [term, info] of Object.entries(HERB_DATABASE)) CANONICAL_PINYIN[term] = canonicalPinyin(info.pinyin);
+for (const [term, info] of Object.entries(ACUPOINT_DATABASE)) CANONICAL_PINYIN[term] = canonicalPinyin(info.pinyin);
+
+export function pinyinStr(text: string): string {
   const cached = pinyinCache.get(text);
   if (cached !== undefined) return cached;
-  const syllables = pinyin(text, { toneType: 'num', type: 'array' }) as string[];
-  const result = syllables.join(' ');
+  const canonical = CANONICAL_PINYIN[text];
+  // pinyin-pro spells u-umlaut 'ü'; pypinyin (and the databases, once
+  // canonicalized) spell it 'v'. Same sound, so normalize to keep strings
+  // comparable across the two implementations.
+  const result =
+    canonical ?? (pinyin(text, { toneType: 'none', type: 'array' }) as string[]).join(' ').replace(/ü/g, 'v');
   pinyinCache.set(text, result);
   return result;
 }
@@ -292,7 +323,18 @@ function findTreatmentSpans(
     let m: RegExpExecArray | null;
     while ((m = exact.exec(text))) starts.push(m.index + trigger.length);
   }
-  starts.push(...findFuzzySectionStarts(text, trigger, fuzzyThreshold));
+  let fuzzyStarts = findFuzzySectionStarts(text, trigger, fuzzyThreshold);
+  if (boundaryRe) {
+    // A fuzzy-matched trigger only counts if the structural boundary (for
+    // herbs: a dosage number) follows soon. A real garbled "处方" is
+    // immediately followed by the herb list; an ordinary phrase that merely
+    // SOUNDS like the trigger ("情绪方面" ~ "处方", 0.80) is not -- and
+    // accepting it scopes herb-correction over consultation narrative. Exact
+    // triggers are left alone (validated on real recordings).
+    const boundary = new RegExp(boundaryRe.source);
+    fuzzyStarts = fuzzyStarts.filter(st => boundary.test(text.slice(st, st + FUZZY_START_BOUNDARY_WINDOW)));
+  }
+  starts.push(...fuzzyStarts);
 
   const spans: Array<[number, number]> = [];
   for (const start of starts) {
@@ -316,7 +358,28 @@ function findTreatmentSpans(
     }
     if (end > start) spans.push([start, end]);
   }
-  return spans;
+  return mergeOverlapping(spans);
+}
+
+// How far after a fuzzy-matched trigger the first structural boundary (dosage)
+// may be. Real prescriptions put the first herb + dose within a few characters
+// of "处方"; 40 leaves room for a short preamble without admitting narrative.
+const FUZZY_START_BOUNDARY_WINDOW = 40;
+
+// Union overlapping/touching spans. Two triggers close together -- a physician
+// saying "我开个处方,处方如下:..." -- otherwise yield spans covering the same
+// herbs, which then get extracted twice: every herb listed two times on the
+// prescription draft (four, in this port, which also stitched the overlapping
+// text into the corrected output twice), reading as a double dose. Confirmed on
+// exactly that utterance in both engines.
+function mergeOverlapping(spans: Array<[number, number]>): Array<[number, number]> {
+  const merged: Array<[number, number]> = [];
+  for (const [s, e] of [...spans].sort((a, b) => a[0] - b[0] || a[1] - b[1])) {
+    const last = merged[merged.length - 1];
+    if (last && s <= last[1]) last[1] = Math.max(last[1], e);
+    else merged.push([s, e]);
+  }
+  return merged;
 }
 
 function correctSpansOnly(
@@ -358,24 +421,29 @@ function correctSpansOnly(
 // ---------- Prescription ----------
 
 const RX_PRESCRIPTION_END = /服[药要]说明|不要说明|方剂基础|方剂|放弃基础|放鸡鸡杵|独活济生汤|复诊/;
-// 0.85 was tuned against desktop's faster-whisper (large-v3) error profile,
-// where a garbled "处方" trigger typically had one tone wrong (e.g. "除方",
-// chu2fang1 vs chu3fang1 = 0.90 similarity). Mobile's whisper.cpp small
-// model, tested against BOTH real consultation recordings, consistently
-// garbles the trigger with BOTH tones wrong ("厨房"/"廚房", chu2fang2 =
-// 0.80) -- a systematic mobile-specific pattern confirmed on two
-// independent recordings, not a one-off. 0.80 catches it; verified against
-// both real transcripts that this does not introduce any spurious
-// additional trigger match elsewhere in either one.
-const PRESCRIPTION_START_THRESHOLD = 0.8;
+// Same value as the desktop engine (_PRESCRIPTION_START_THRESHOLD). It was
+// briefly lowered to 0.80 here to catch whisper.cpp's habit of writing "厨房"
+// for "处方" -- but that was compensating for tone-sensitive scoring this port
+// never should have had (see pinyinStr): with tones ignored, "厨房" and "处方"
+// are the same pinyin string and score 1.0 at ANY threshold. Left at 0.80, it
+// admitted "绪方" (from the ordinary phrase "情绪方面", also 0.80) as a fake
+// prescription trigger, which duplicated herbs and applied herb-correction to
+// consultation narrative.
+const PRESCRIPTION_START_THRESHOLD = 0.85;
 // [gG克]: see the matching comment on DOSAGE_PATTERN in pipeline.ts -- the
 // boundary that trims a prescription span to its last dosage number must
 // recognize the same unit spellings the extractor does, or a span gets cut
 // short (or not found at all) purely because of which unit the model wrote.
 const DOSAGE_BOUNDARY_RE = /\d+\s*[gG克]/;
 
-export function findPrescriptionSpans(text: string, maxSpanLen = 250): Array<[number, number]> {
-  return findTreatmentSpans(text, '处方', RX_PRESCRIPTION_END, maxSpanLen, DOSAGE_BOUNDARY_RE, PRESCRIPTION_START_THRESHOLD);
+// startThreshold is overridable only so tests can prove the fuzzy-start guard holds even at a
+// deliberately permissive value; production callers use the default.
+export function findPrescriptionSpans(
+  text: string,
+  maxSpanLen = 250,
+  startThreshold = PRESCRIPTION_START_THRESHOLD,
+): Array<[number, number]> {
+  return findTreatmentSpans(text, '处方', RX_PRESCRIPTION_END, maxSpanLen, DOSAGE_BOUNDARY_RE, startThreshold);
 }
 
 export function correctPrescriptionOnly(text: string): { corrected: string; edits: Correction[]; spans: Array<[number, number]> } {
