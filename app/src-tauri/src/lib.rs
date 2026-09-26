@@ -44,25 +44,37 @@ fn save_recording(bytes: Vec<u8>, extension: String) -> Result<String, String> {
 async fn run_note_pipeline(app: tauri::AppHandle, transcript: String) -> Result<String, String> {
     log(&format!("run_note_pipeline: start, transcript len={}", transcript.len()));
     let _ = app.emit("pipeline-stage", "processing");
-    let file_path = std::env::temp_dir().join("tcm_transcript_input.txt");
+    // Unique per call, and removed as soon as the sidecar returns: this file
+    // holds the RAW transcript -- name, NRIC, phone number, un-redacted -- and
+    // exists only as an IPC handoff to the sidecar, so nothing should outlive
+    // the call. (It used to be one fixed filename that was never deleted.)
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let file_path = std::env::temp_dir().join(format!("tcm_transcript_input_{}.txt", nanos));
     std::fs::write(&file_path, &transcript).map_err(|e| {
         log(&format!("run_note_pipeline: failed to write temp file: {}", e));
+        let _ = std::fs::remove_file(&file_path); // a failed write can still leave a partial file
         e.to_string()
     })?;
     log("run_note_pipeline: temp file written, spawning sidecar 'main'");
 
     let sidecar_command = app.shell().sidecar("main").map_err(|e| {
         log(&format!("run_note_pipeline: sidecar() lookup failed: {}", e));
+        let _ = std::fs::remove_file(&file_path);
         e.to_string()
     })?;
-    let output = sidecar_command
+    let output_result = sidecar_command
         .args([file_path.to_string_lossy().to_string()])
         .output()
-        .await
-        .map_err(|e| {
-            log(&format!("run_note_pipeline: output().await failed: {}", e));
-            e.to_string()
-        })?;
+        .await;
+    // Delete before inspecting the result, so the failure path cleans up too.
+    let _ = std::fs::remove_file(&file_path);
+    let output = output_result.map_err(|e| {
+        log(&format!("run_note_pipeline: output().await failed: {}", e));
+        e.to_string()
+    })?;
 
     log(&format!(
         "run_note_pipeline: sidecar exited, success={}, stdout_len={}, stderr_len={}",

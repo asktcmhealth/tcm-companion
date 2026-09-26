@@ -80,6 +80,7 @@
                 <span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span><span class="wf-bar"></span>
               </div>
               <span class="record-hero-hint" id="record-hint" data-i18n="record_hint_idle">Tap to start recording</span>
+              <p class="notice notice-error" id="record-notice" role="alert" hidden></p>
             </div>
           </div>
 
@@ -133,6 +134,11 @@
           <li class="empty-state" id="patient-list-empty" data-i18n="patient_list_empty">No consultations yet — record or add one above.</li>
         </ul>
       </section>
+
+      <div class="job-status" id="job-status" role="status" aria-live="polite" hidden>
+        <p class="job-status-text" id="job-status-text"></p>
+        <button type="button" id="job-retry" class="job-retry" data-i18n="retry_button" hidden>Retry</button>
+      </div>
 
       <div class="results" id="results-panel" hidden>
         <section>

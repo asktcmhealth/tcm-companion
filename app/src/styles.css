@@ -17,6 +17,12 @@
   --warn-border: #e9cd8b;
   --danger: #a3352a;
   --danger-bg: #f9e8e5;
+  /* "Verify" = the transcript is ambiguous between two real herbs/points; a
+     third semantic color so it never reads as the amber high-risk or red
+     out-of-range signals sitting beside it. */
+  --verify-bg: #e6edf8;
+  --verify-ink: #2a4a7f;
+  --verify-border: #aebfdc;
   --accent-glow: rgba(47, 93, 80, 0.25);
   --radius: 12px;
   --radius-sm: 8px;
@@ -731,10 +737,92 @@ textarea:focus {
   border: 1px solid var(--warn-border);
 }
 
+/* Carries a full sentence from the dosage check, not a one-word tag: the
+   pill styling's uppercase would shout it (and turn the unit "g" into "G"),
+   and nowrap-style pills truncate awkwardly. Sentence case, wrapping. */
 .badge-out-of-range {
   background: var(--danger-bg);
   color: var(--danger);
   border: 1px solid var(--danger);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
+  font-size: 0.8rem;
+  border-radius: var(--radius-sm);
+}
+
+.badge-verify {
+  background: var(--verify-bg);
+  color: var(--verify-ink);
+  border: 1px solid var(--verify-border);
+}
+
+.entry-row-verify {
+  border-left: 3px solid var(--verify-ink);
+}
+
+.entry-note {
+  flex-basis: 100%;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+}
+
+.review-banner {
+  margin: 0 0 0.6rem;
+  padding: 0.5rem 0.85rem;
+  background: var(--warn-bg);
+  color: var(--warn-ink);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.notice {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+}
+
+.notice-error {
+  color: var(--danger);
+}
+
+.job-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0;
+  padding: 0.85rem 1.1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink-muted);
+}
+
+.job-status[hidden] {
+  display: none;
+}
+
+.job-status.state-error {
+  background: var(--danger-bg);
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.job-status-text {
+  margin: 0;
+  flex: 1 1 16rem;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.job-retry[hidden] {
+  display: none;
 }
 
 .deid-list {
@@ -808,6 +896,9 @@ details pre {
     --warn-border: #5c4a1e;
     --danger: #e2857a;
     --danger-bg: #3a2320;
+    --verify-bg: #1f2b40;
+    --verify-ink: #9db9ea;
+    --verify-border: #35496d;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35), 0 1px 1px rgba(0, 0, 0, 0.25);
     --shadow-md: 0 6px 16px -4px rgba(0, 0, 0, 0.45), 0 2px 6px -2px rgba(0, 0, 0, 0.3);

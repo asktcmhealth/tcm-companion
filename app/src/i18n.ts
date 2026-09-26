@@ -61,6 +61,20 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     empty_no_herbs: "No herbs extracted.",
     empty_no_acupoints: "No acupoints extracted.",
     empty_no_pii: "No PII detected.",
+    empty_note: "(empty)",
+    empty_no_prescription: "No prescription section was detected. Say “处方” before reading out the herbs so the app knows where the prescription starts.",
+
+    badge_high_risk: "High-risk herb",
+    badge_verify: "Verify",
+    verify_note: "Uncertain match — the audio could also be “{alt}”. Please confirm which is correct.",
+    review_banner: "Check before sign-off:",
+    review_part_verify: "{n} uncertain match(es)",
+    review_part_range: "{n} outside typical dose",
+    review_part_risk: "{n} high-risk herb(s)",
+
+    job_queued_msg: "Waiting in the queue — results will appear here when this patient is done.",
+    job_active_msg: "Working on this patient now — results will appear here.",
+    retry_button: "Retry",
 
     phrase_transcribing_1: "Listening closely…",
     phrase_transcribing_2: "Catching every word…",
@@ -126,6 +140,20 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     empty_no_herbs: "未提取到药材。",
     empty_no_acupoints: "未提取到穴位。",
     empty_no_pii: "未检测到个人信息。",
+    empty_note: "（空）",
+    empty_no_prescription: "未检测到处方部分。读药材之前请先说“处方”，应用才能知道处方从哪里开始。",
+
+    badge_high_risk: "高风险药材",
+    badge_verify: "请核对",
+    verify_note: "识别存疑——录音也可能是“{alt}”。请确认哪一个正确。",
+    review_banner: "签署前请核对：",
+    review_part_verify: "{n} 项识别存疑",
+    review_part_range: "{n} 项超出常规剂量",
+    review_part_risk: "{n} 味高风险药材",
+
+    job_queued_msg: "正在排队——该病人处理完成后，结果会显示在此处。",
+    job_active_msg: "正在处理该病人——结果会显示在此处。",
+    retry_button: "重试",
 
     phrase_transcribing_1: "正在仔细聆听…",
     phrase_transcribing_2: "不放过每一个字…",

@@ -3,6 +3,9 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { t, getLang, setLang, stagePhrases } from "./i18n";
 
+// `ambiguous`/`ambiguous_with` are optional because a sidecar binary built
+// before the ambiguity check existed simply doesn't emit them -- treated as
+// "not flagged" rather than crashing on a missing field.
 interface HerbEntry {
   name: string;
   dosage: number;
@@ -11,6 +14,8 @@ interface HerbEntry {
   dosage_warning: boolean;
   dosage_check_message: string;
   high_risk: boolean;
+  ambiguous?: boolean;
+  ambiguous_with?: string | null;
 }
 
 interface AcupointEntry {
@@ -19,6 +24,16 @@ interface AcupointEntry {
   meridian: string;
   laterality: string | null;
   db_confirmed: boolean;
+  ambiguous?: boolean;
+  ambiguous_with?: string | null;
+}
+
+// Every string interpolated into innerHTML below goes through this. Most come
+// from the closed herb/acupoint databases, but the de-identification report
+// echoes text lifted straight from the transcript (pasted by the user or
+// produced by ASR), which can contain anything.
+function esc(value: unknown): string {
+  return String(value).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 }
 
 interface DeidRedaction {
@@ -64,6 +79,13 @@ let selectedJobId: string | null = null;
 let workerRunning = false;
 let patientCounter = 0;
 
+// Tauri rejects invoke() with the plain string the Rust command returned, but
+// other failures arrive as Error objects -- String(err) on those yields
+// "Error: message", which then gets our own "Error: " prefix stacked on top.
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
 function makeJobId(): string {
   return `job-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -78,8 +100,16 @@ function enqueueJob(partial: Pick<PatientJob, "audioPath" | "transcript">) {
     ...partial,
   };
   jobs.push(job);
-  renderPatientList();
-  selectJob(job.id);
+  // Don't yank the view away from a finished patient the physician may be
+  // mid-review on -- the whole point of the queue is starting the next
+  // patient without losing your place. Only auto-select when there's nothing
+  // useful on screen yet (first job, or the selected one has no result).
+  const current = jobs.find((j) => j.id === selectedJobId);
+  if (!current || !current.result) {
+    selectJob(job.id);
+  } else {
+    renderPatientList();
+  }
   void runQueueWorker();
 }
 
@@ -94,6 +124,7 @@ async function runQueueWorker() {
       if (next.audioPath) {
         next.status = "transcribing";
         renderPatientList();
+        if (selectedJobId === next.id) renderSelectedJob();
         startStage(next.label, "transcribing");
         try {
           const raw = await invoke<string>("run_transcribe_and_process", { audioPath: next.audioPath });
@@ -101,13 +132,14 @@ async function runQueueWorker() {
           next.status = "done";
           finishStage(next.label, summarize(next.result!), false);
         } catch (err) {
-          next.error = String(err);
+          next.error = errorText(err);
           next.status = "error";
-          finishStage(next.label, `${t("error_prefix")}${err}`, true);
+          finishStage(next.label, `${t("error_prefix")}${errorText(err)}`, true);
         }
       } else if (next.transcript !== undefined) {
         next.status = "processing";
         renderPatientList();
+        if (selectedJobId === next.id) renderSelectedJob();
         startStage(next.label, "processing");
         try {
           const raw = await invoke<string>("run_note_pipeline", { transcript: next.transcript });
@@ -115,9 +147,9 @@ async function runQueueWorker() {
           next.status = "done";
           finishStage(next.label, summarize(next.result!), false);
         } catch (err) {
-          next.error = String(err);
+          next.error = errorText(err);
           next.status = "error";
-          finishStage(next.label, `${t("error_prefix")}${err}`, true);
+          finishStage(next.label, `${t("error_prefix")}${errorText(err)}`, true);
         }
       }
 
@@ -260,42 +292,122 @@ listen<string>("pipeline-stage", (event) => {
 
 // ---------- Result rendering ----------
 
-function renderPrescription(herbs: HerbEntry[]): string {
-  if (herbs.length === 0) return `<span class="empty-state">${t("empty_no_herbs")}</span>`;
+// The "verify" flag comes from the correction engine's ambiguity check: a
+// different real herb/acupoint scored almost as well against the same span of
+// audio, so the transcript alone can't say which was actually spoken. It is a
+// speech-recognition caveat, NOT a clinical suggestion -- the wording points
+// the physician back to the recording and never recommends either option.
+function verifyNote(alt: string | null | undefined): string {
+  return t("verify_note").replace("{alt}", esc(alt ?? "?"));
+}
+
+// One glanceable line above the list so a flagged row isn't missed while
+// scrolling: how many entries need a human look before sign-off.
+function reviewBanner(parts: string[]): string {
+  if (parts.length === 0) return "";
+  return `<p class="review-banner" role="note"><strong>${t("review_banner")}</strong> ${parts.join(" · ")}</p>`;
+}
+
+function countPart(key: string, n: number): string {
+  return n > 0 ? t(key).replace("{n}", String(n)) : "";
+}
+
+function renderPrescription(herbs: HerbEntry[], sectionFound: boolean): string {
+  // An empty list has two very different meanings. If no "处方" trigger was
+  // recognized nothing was even searched -- the physician must not read that as
+  // "nothing was prescribed".
+  if (herbs.length === 0) {
+    return `<span class="empty-state">${t(sectionFound ? "empty_no_herbs" : "empty_no_prescription")}</span>`;
+  }
+
+  const banner = reviewBanner(
+    [
+      countPart("review_part_verify", herbs.filter((h) => h.ambiguous).length),
+      countPart("review_part_range", herbs.filter((h) => h.dosage_warning).length),
+      countPart("review_part_risk", herbs.filter((h) => h.high_risk).length),
+    ].filter(Boolean),
+  );
+
   const rows = herbs
     .map((h) => {
       const badges: string[] = [];
-      if (h.high_risk) badges.push('<span class="badge badge-high-risk">High-risk herb</span>');
-      if (h.dosage_warning) badges.push(`<span class="badge badge-out-of-range">${h.dosage_check_message}</span>`);
-      return `<li class="entry-row">
-        <span class="entry-main">${h.name} <span class="entry-meta">${h.dosage}${h.unit}</span></span>
+      if (h.ambiguous) badges.push(`<span class="badge badge-verify">${t("badge_verify")}</span>`);
+      if (h.high_risk) badges.push(`<span class="badge badge-high-risk">${t("badge_high_risk")}</span>`);
+      if (h.dosage_warning) badges.push(`<span class="badge badge-out-of-range">${esc(h.dosage_check_message)}</span>`);
+      return `<li class="entry-row${h.ambiguous ? " entry-row-verify" : ""}">
+        <span class="entry-main">${esc(h.name)} <span class="entry-meta">${esc(h.dosage)}${esc(h.unit)}</span></span>
         <span class="entry-badges">${badges.join("")}</span>
+        ${h.ambiguous ? `<span class="entry-note">${verifyNote(h.ambiguous_with)}</span>` : ""}
       </li>`;
     })
     .join("");
-  return `<ul class="entry-list">${rows}</ul>`;
+  return `${banner}<ul class="entry-list">${rows}</ul>`;
 }
 
 function renderAcupuncture(points: AcupointEntry[]): string {
   if (points.length === 0) return `<span class="empty-state">${t("empty_no_acupoints")}</span>`;
+
+  const banner = reviewBanner(
+    [countPart("review_part_verify", points.filter((p) => p.ambiguous).length)].filter(Boolean),
+  );
+
   const rows = points
     .map((p) => {
-      const lat = p.laterality ? ` (${p.laterality})` : "";
-      return `<li class="entry-row">
-        <span class="entry-main">${p.name}${lat}</span>
-        <span class="entry-meta">${p.code} · ${p.meridian}</span>
+      const lat = p.laterality ? ` (${esc(p.laterality)})` : "";
+      return `<li class="entry-row${p.ambiguous ? " entry-row-verify" : ""}">
+        <span class="entry-main">${esc(p.name)}${lat}</span>
+        <span class="entry-badges">${p.ambiguous ? `<span class="badge badge-verify">${t("badge_verify")}</span>` : ""}</span>
+        <span class="entry-meta">${esc(p.code)} · ${esc(p.meridian)}</span>
+        ${p.ambiguous ? `<span class="entry-note">${verifyNote(p.ambiguous_with)}</span>` : ""}
       </li>`;
     })
     .join("");
-  return `<ul class="entry-list">${rows}</ul>`;
+  return `${banner}<ul class="entry-list">${rows}</ul>`;
 }
 
 function renderDeid(report: DeidRedaction[]): string {
   if (report.length === 0) return `<span class="empty-state">${t("empty_no_pii")}</span>`;
   const rows = report
-    .map((r) => `<li class="deid-chip"><span class="deid-type">${r.type}</span>${r.text}</li>`)
+    .map((r) => `<li class="deid-chip"><span class="deid-type">${esc(r.type)}</span>${esc(r.text)}</li>`)
     .join("");
   return `<ul class="deid-list">${rows}</ul>`;
+}
+
+// Shown in place of results whenever the selected patient has none yet. An
+// errored job used to render nothing at all -- its error text lived only in
+// the transient stage bar and was overwritten as soon as the next job began,
+// leaving a dead row with no explanation (a real risk here: transcription is
+// memory-hungry on 8GB machines and can genuinely fail).
+function renderJobStatus(job: PatientJob | undefined) {
+  const card = document.querySelector<HTMLElement>("#job-status");
+  const text = document.querySelector<HTMLElement>("#job-status-text");
+  const retry = document.querySelector<HTMLButtonElement>("#job-retry");
+  if (!card || !text || !retry) return;
+
+  if (!job || job.result) {
+    card.hidden = true;
+    return;
+  }
+
+  card.hidden = false;
+  const isError = job.status === "error";
+  card.classList.toggle("state-error", isError);
+  text.textContent = isError
+    ? `${t("error_prefix")}${job.error ?? ""}`
+    : job.status === "queued"
+      ? t("job_queued_msg")
+      : t("job_active_msg");
+  retry.hidden = !isError;
+}
+
+function retrySelectedJob() {
+  const job = jobs.find((j) => j.id === selectedJobId);
+  if (!job || job.status !== "error") return;
+  job.status = "queued";
+  job.error = undefined;
+  renderPatientList();
+  renderSelectedJob();
+  void runQueueWorker();
 }
 
 function renderSelectedJob() {
@@ -308,6 +420,7 @@ function renderSelectedJob() {
   if (!panel || !noteEl || !prescriptionEl || !acupunctureEl || !deidEl || !rawEl) return;
 
   const job = jobs.find((j) => j.id === selectedJobId);
+  renderJobStatus(job);
   if (!job || !job.result) {
     panel.hidden = true;
     return;
@@ -315,8 +428,8 @@ function renderSelectedJob() {
 
   panel.hidden = false;
   const result = job.result;
-  noteEl.textContent = result.consultation_note || "(empty)";
-  prescriptionEl.innerHTML = renderPrescription(result.prescription.herbs);
+  noteEl.textContent = result.consultation_note || t("empty_note");
+  prescriptionEl.innerHTML = renderPrescription(result.prescription.herbs, result.prescription_spans_found > 0);
   acupunctureEl.innerHTML = renderAcupuncture(result.acupuncture.points);
   deidEl.innerHTML = renderDeid(result.deid_report);
   rawEl.textContent = JSON.stringify(result, null, 2);
@@ -465,7 +578,7 @@ function stopRecording(): Promise<void> {
         const audioPath = await invoke<string>("save_recording", { bytes, extension });
         enqueueJob({ audioPath });
       } catch (err) {
-        window.alert(`${t("error_save_recording")}${err}`);
+        showRecordNotice(`${t("error_save_recording")}${errorText(err)}`);
       }
       resolve();
     };
@@ -475,14 +588,25 @@ function stopRecording(): Promise<void> {
   });
 }
 
+// Inline (role="alert") instead of window.alert(): a native modal steals focus
+// and blocks the whole window -- including the stage bar of a patient that is
+// still transcribing in the background.
+function showRecordNotice(message: string) {
+  const el = document.querySelector<HTMLElement>("#record-notice");
+  if (!el) return;
+  el.textContent = message;
+  el.hidden = message === "";
+}
+
 async function toggleRecording() {
   if (mediaRecorder) {
     await stopRecording();
   } else {
+    showRecordNotice("");
     try {
       await startRecording();
     } catch (err) {
-      window.alert(`${t("error_mic_access")}${err}`);
+      showRecordNotice(`${t("error_mic_access")}${errorText(err)}`);
     }
   }
 }
@@ -521,19 +645,38 @@ function setupLangToggle() {
 
 // ---------- Tabs ----------
 
+// WAI-ARIA tabs pattern: only the active tab is in the Tab order (roving
+// tabindex); arrow keys / Home / End move between tabs. The markup already
+// declared role="tablist", which promises this behavior to screen-reader and
+// keyboard users.
 function setupTabs() {
-  const tabs = document.querySelectorAll<HTMLButtonElement>(".tab-btn");
-  tabs.forEach((tab) => {
-    tab.addEventListener("click", () => {
-      tabs.forEach((t) => {
-        t.classList.remove("active");
-        t.setAttribute("aria-selected", "false");
-      });
-      tab.classList.add("active");
-      tab.setAttribute("aria-selected", "true");
-      document.querySelectorAll<HTMLElement>(".tab-panel").forEach((panel) => {
-        panel.classList.toggle("active", panel.id === `panel-${tab.dataset.tab}`);
-      });
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".tab-btn"));
+
+  const activate = (tab: HTMLButtonElement) => {
+    tabs.forEach((other) => {
+      const isActive = other === tab;
+      other.classList.toggle("active", isActive);
+      other.setAttribute("aria-selected", String(isActive));
+      other.tabIndex = isActive ? 0 : -1;
+    });
+    document.querySelectorAll<HTMLElement>(".tab-panel").forEach((panel) => {
+      panel.classList.toggle("active", panel.id === `panel-${tab.dataset.tab}`);
+    });
+  };
+
+  tabs.forEach((tab, i) => {
+    tab.tabIndex = tab.classList.contains("active") ? 0 : -1;
+    tab.addEventListener("click", () => activate(tab));
+    tab.addEventListener("keydown", (e) => {
+      let next = -1;
+      if (e.key === "ArrowRight") next = (i + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") next = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") next = 0;
+      else if (e.key === "End") next = tabs.length - 1;
+      if (next < 0) return;
+      e.preventDefault();
+      activate(tabs[next]);
+      tabs[next].focus();
     });
   });
 }
@@ -545,4 +688,5 @@ window.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#run-button")?.addEventListener("click", queuePastedText);
   document.querySelector("#pick-audio-button")?.addEventListener("click", pickAndQueueAudio);
   document.querySelector("#record-button")?.addEventListener("click", toggleRecording);
+  document.querySelector("#job-retry")?.addEventListener("click", retrySelectedJob);
 });
