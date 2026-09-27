@@ -115,6 +115,28 @@ class Script1(unittest.TestCase):
         self.assertIn("半夏", risky)
 
 
+IPHONE_SIM_RAW = '今天来的病人是一位42岁的女性患者,她的主术是最近两个星期持续感到疲乏,球队也有点酸痛,她说最近工作压力比较大,睡眠质量也不好,容易半夜醒来。我问她饮食情况,她说胃口也不错,但是喜欢吃冷的东西,经常喝冰水,三餐不规律。大便方面,她说每清一次,但是比较软,有时候不成型,小便正常,没有特别的问题。情绪方面,她最近比较容易烦躁,有时候会莫名其妙的叹息,月经周期基本正常,但是金钱会有轻微的胸胀。接下来我检查舌象和脉象,舌枕,舌指淡红,舌体稍胖,边游齿痕,胎白泥,舌中部胎稍厚。脉枕,脉弦器,左关脉稍弦,右关脉无缓,两齿脉程。根据四诊所见,这位病人的辨真是肝育器质体虚失胜,质责书肝理器、腱皮化尸。厨房如下,柴糊10克,白草15克,当归10克,白竹15克,芙苓20克,黄芪30克,档参15克,陈皮6克,淡下10克,干草6克,益仁20克,杀人5克后下,方剂基础,下脑散和四菌子汤加减。服药说明,7天每天两次,三后半小时服用,温服复诊,下周同一时间。第二个病人,男性55岁,主书是膝盖疼痛3个月,舌质暗红,有一般胎薄白,脉象色,两齿脉程细。验证为,阵阳须含湿臂足,加油血液。厨房支付者9克,先煎30分钟,肉桂5克后下,手地防10克,汤汁鱼12克,杜胗15克,牛蜥15克,独活10克,三季生存1克,穿胸10克,红花6克,桃仁10克,年胡锁12克,制干草6克。汤汁基础,独活鸡胗汤和贵妇地防碗加减。服药说明,14天每天两次,三千温服。患者应该避免冷却,食物和饮料在温度中的时间。请注意保暖,避免受寒。'
+
+
+class IphoneSimulatorRun(unittest.TestCase):
+    """Real whisper.rn (ggml-medium) transcript from the iOS Simulator e2e run."""
+
+    def setUp(self):
+        self.herbs = run(IPHONE_SIM_RAW)["prescription"]["herbs"]
+
+    def test_polyphonic_shen_is_recovered(self):
+        # Whisper wrote 档参; 参 must read "shen" for it to match 党参.
+        self.assertIn("党参", {h["name"] for h in self.herbs})
+
+    def test_recovers_most_herbs_and_flags_the_rest(self):
+        found = {h["name"] for h in self.herbs}
+        self.assertGreaterEqual(len(found & set(SCRIPT1_HERBS)), 23)
+        wrong = [h for h in self.herbs if h["name"] not in SCRIPT1_HERBS]
+        # A herb that is not in the script must never appear unflagged.
+        for h in wrong:
+            self.assertTrue(h["ambiguous"] or h["dosage_warning"], h["name"])
+
+
 class Script2(unittest.TestCase):
     def setUp(self):
         self.result = run(SCRIPT2_RAW)

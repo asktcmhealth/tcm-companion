@@ -30,6 +30,10 @@ sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 # appear outside common phrases. Override known cases here as we find them.
 PINYIN_OVERRIDES = {
     "芎": "xiong",  # 川芎 (chuan1 xiong1) -- default dict reads it as "qiong"
+    # 参 reads "can" by default, but in this domain it is (nearly) always the herb
+    # 党参/丹参/人参/沙参 = "shen". Whisper writes "档参" for 党参; with "can" that
+    # scored below threshold and the herb was silently dropped (found on-device).
+    "参": "shen",
 }
 
 # Kept for this script's own benchmark scoring (main()) against

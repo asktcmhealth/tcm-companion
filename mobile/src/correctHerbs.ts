@@ -49,8 +49,14 @@ export function pinyinStr(text: string): string {
   // pinyin-pro spells u-umlaut 'ü'; pypinyin (and the databases, once
   // canonicalized) spell it 'v'. Same sound, so normalize to keep strings
   // comparable across the two implementations.
+  // 参 is 'shen' in this domain (党参/丹参/人参), not the dictionary default
+  // 'can'; mirrors PINYIN_OVERRIDES in the Python engine.
   const result =
-    canonical ?? (pinyin(text, { toneType: 'none', type: 'array' }) as string[]).join(' ').replace(/ü/g, 'v');
+    canonical ??
+    (pinyin(text, { toneType: 'none', type: 'array' }) as string[])
+      .map((syllable, i) => (text[i] === '参' ? 'shen' : syllable))
+      .join(' ')
+      .replace(/ü/g, 'v');
   pinyinCache.set(text, result);
   return result;
 }
