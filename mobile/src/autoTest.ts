@@ -16,8 +16,16 @@ import RNFS from 'react-native-fs';
 
 const dir = () => `${RNFS.DocumentDirectoryPath}/autotest`;
 
+export interface AutoTestVariant {
+  label: string;
+  /** Optional Whisper initial prompt. Experiment-only: the shipped app sets none. */
+  prompt?: string;
+}
+
 export interface AutoTestPlan {
   audioPath: string;
+  /** Transcribe the same audio once per variant, to compare settings fairly in one run. */
+  variants: AutoTestVariant[];
 }
 
 export async function readAutoTestPlan(): Promise<AutoTestPlan | null> {
@@ -26,7 +34,18 @@ export async function readAutoTestPlan(): Promise<AutoTestPlan | null> {
     if (!(await RNFS.exists(planPath))) return null;
     const plan = JSON.parse(await RNFS.readFile(planPath, 'utf8'));
     if (typeof plan?.audio !== 'string' || plan.audio.includes('/')) return null;
-    return { audioPath: `${dir()}/${plan.audio}` };
+    const variants: AutoTestVariant[] = Array.isArray(plan.variants)
+      ? plan.variants
+          .filter((v: unknown) => typeof (v as AutoTestVariant)?.label === 'string')
+          .map((v: AutoTestVariant) => ({
+            label: v.label,
+            prompt: typeof v.prompt === 'string' ? v.prompt : undefined,
+          }))
+      : [];
+    return {
+      audioPath: `${dir()}/${plan.audio}`,
+      variants: variants.length > 0 ? variants : [{ label: 'baseline' }],
+    };
   } catch {
     return null;
   }

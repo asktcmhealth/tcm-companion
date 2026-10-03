@@ -1,0 +1,12 @@
+{
+ "audio": "audio.wav",
+ "variants": [
+  {
+   "label": "baseline"
+  },
+  {
+   "label": "generic_prompt",
+   "prompt": "以下是中医门诊录音，包含中药处方、剂量（克）和针灸穴位。"
+  }
+ ]
+}

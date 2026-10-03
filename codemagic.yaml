@@ -112,7 +112,7 @@ workflows:
           DATA=$(xcrun simctl get_app_container "$DEVICE" com.tcmscribemobile data)
           mkdir -p "$DATA/Documents/autotest" screenshots
           cp e2e/audio.wav "$DATA/Documents/autotest/audio.wav"
-          echo '{"audio":"audio.wav"}' > "$DATA/Documents/autotest/plan.json"
+          cp e2e/plan.json "$DATA/Documents/autotest/plan.json"
           xcrun simctl launch "$DEVICE" com.tcmscribemobile
           # Wait up to 40 minutes (539 MB model download + transcription).
           for n in $(seq 1 240); do

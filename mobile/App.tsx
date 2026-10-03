@@ -211,30 +211,39 @@ function Screen(): React.JSX.Element {
         whisperContextRef.current = context;
         result.loadSeconds = seconds();
 
-        setStage('transcribing');
-        await logAutoTest(startedAt, 'transcribing');
-        seconds = lap();
-        const { promise } = context.transcribe(`file://${plan.audioPath}`, { language: 'zh' });
-        const { result: text } = await promise;
-        result.transcribeSeconds = seconds();
-        await logAutoTest(startedAt, `transcribed in ${result.transcribeSeconds}s`);
+        const variants: Record<string, unknown> = {};
+        for (const variant of plan.variants) {
+          setStage('transcribing');
+          await logAutoTest(startedAt, `transcribing [${variant.label}]`);
+          seconds = lap();
+          const { promise } = context.transcribe(`file://${plan.audioPath}`, {
+            language: 'zh',
+            ...(variant.prompt ? { prompt: variant.prompt } : {}),
+          });
+          const { result: text } = await promise;
+          const transcribeSeconds = seconds();
+          await logAutoTest(startedAt, `transcribed [${variant.label}] in ${transcribeSeconds}s`);
 
-        const out = runPipeline(text);
-        setOutput(out);
-        setStage('ready');
-        Object.assign(result, {
-          rawTranscript: text,
-          prescriptionSectionFound: out.prescriptionSectionFound,
-          herbs: out.herbs.map(h => ({
-            name: h.name,
-            dosage: h.dosage,
-            highRisk: h.highRisk,
-            dosageWarning: h.dosageWarning,
-            ambiguous: h.ambiguous,
-            ambiguousWith: h.ambiguousWith ?? null,
-          })),
-          points: out.points.map(p => ({ name: p.name, ambiguous: p.ambiguous })),
-        });
+          const out = runPipeline(text);
+          setOutput(out);
+          setStage('ready');
+          variants[variant.label] = {
+            prompt: variant.prompt ?? null,
+            transcribeSeconds,
+            rawTranscript: text,
+            prescriptionSectionFound: out.prescriptionSectionFound,
+            herbs: out.herbs.map(h => ({
+              name: h.name,
+              dosage: h.dosage,
+              highRisk: h.highRisk,
+              dosageWarning: h.dosageWarning,
+              ambiguous: h.ambiguous,
+              ambiguousWith: h.ambiguousWith ?? null,
+            })),
+            points: out.points.map(pt => ({ name: pt.name, ambiguous: pt.ambiguous })),
+          };
+        }
+        result.variants = variants;
       } catch (err) {
         result.error = formatError(err);
         setFailure({ message: formatError(err), retry: 'setup' });

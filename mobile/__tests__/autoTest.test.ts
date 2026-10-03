@@ -26,7 +26,21 @@ describe('readAutoTestPlan', () => {
   it('resolves the audio file inside the autotest folder', async () => {
     fs.exists.mockResolvedValue(true);
     fs.readFile.mockResolvedValue('{"audio":"audio.wav"}');
-    expect(await readAutoTestPlan()).toEqual({ audioPath: '/docs/autotest/audio.wav' });
+    expect(await readAutoTestPlan()).toEqual({
+      audioPath: '/docs/autotest/audio.wav',
+      variants: [{ label: 'baseline' }],
+    });
+  });
+
+  it('reads experiment variants and drops malformed ones', async () => {
+    fs.exists.mockResolvedValue(true);
+    fs.readFile.mockResolvedValue(
+      JSON.stringify({ audio: 'a.wav', variants: [{ label: 'x' }, { label: 'y', prompt: 'p' }, { nolabel: 1 }, 5] }),
+    );
+    expect((await readAutoTestPlan())?.variants).toEqual([
+      { label: 'x', prompt: undefined },
+      { label: 'y', prompt: 'p' },
+    ]);
   });
 
   it('rejects a plan that points outside the folder', async () => {
