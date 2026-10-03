@@ -41,6 +41,7 @@ import { runPipeline, type PipelineOutput } from './src/runPipeline';
 import { defaultLang, translate, type Lang } from './src/i18n';
 import { useTheme, type Theme } from './src/theme';
 import { HerbList, PointList } from './src/Results';
+import { RecordButton } from './src/RecordButton';
 import { logAutoTest, readAutoTestPlan, writeAutoTestResult, type AutoTestPlan } from './src/autoTest';
 
 type Stage =
@@ -410,22 +411,14 @@ function Screen(): React.JSX.Element {
 
         {(canRecord || stage === 'transcribing') && (
           <View style={styles.recordArea}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={stage === 'recording' ? t('stop') : t('record')}
-              accessibilityState={{ disabled: stage === 'transcribing' }}
-              onPress={handleRecordPress}
+            <RecordButton
+              theme={theme}
+              recording={stage === 'recording'}
               disabled={stage === 'transcribing'}
-              style={[
-                styles.recordButton,
-                stage === 'recording' && styles.recordButtonActive,
-                stage === 'transcribing' && styles.recordButtonDisabled,
-              ]}>
-              <Text style={styles.recordButtonText}>
-                {stage === 'recording' ? t('stop') : t('record')}
-              </Text>
-              {stage === 'recording' && <Text style={styles.recordTimer}>{formatClock(recordingSeconds)}</Text>}
-            </Pressable>
+              label={stage === 'recording' ? t('stop') : t('record')}
+              seconds={formatClock(recordingSeconds)}
+              onPress={handleRecordPress}
+            />
 
             {stage === 'recording' && (
               <View style={styles.meterTrack} accessibilityLabel="Microphone level">
@@ -595,19 +588,6 @@ function makeStyles(c: Theme) {
     },
     secondaryButtonText: { color: c.danger, fontWeight: '600' },
     recordArea: { alignItems: 'center', marginBottom: 16 },
-    recordButton: {
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      backgroundColor: c.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginVertical: 8,
-    },
-    recordButtonActive: { backgroundColor: c.danger },
-    recordButtonDisabled: { backgroundColor: c.disabled },
-    recordButtonText: { color: c.onAccent, fontWeight: '700', fontSize: 17 },
-    recordTimer: { color: c.onAccent, fontSize: 15, marginTop: 4, fontVariant: ['tabular-nums'] },
     meterTrack: { width: 180, height: 6, borderRadius: 3, backgroundColor: c.cardSunken, overflow: 'hidden', marginTop: 8 },
     meterFill: { height: 6, backgroundColor: c.accent },
     hint: { fontSize: 13, color: c.inkMuted, textAlign: 'center', marginTop: 10 },
