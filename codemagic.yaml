@@ -99,6 +99,7 @@ workflows:
           xcodebuild build -workspace ios/TCMScribeMobile.xcworkspace -scheme TCMScribeMobile -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO
       - name: Convert test audio to WAV
         script: |
+          [ -f e2e/audio.m4a ] || { echo "mobile/e2e/audio.m4a was removed from the repo after the first end-to-end run. Add a test recording there (read-aloud of benchmark/simulation_script.txt, no patient data) before running this workflow."; exit 1; }
           afconvert -f WAVE -d LEI16@16000 -c 1 e2e/audio.m4a e2e/audio.wav
           ls -l e2e
       - name: Install app, drop test plan, run and wait for result
