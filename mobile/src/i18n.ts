@@ -50,6 +50,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_verify: '{n} uncertain match(es)',
     review_part_range: '{n} outside typical dose',
     review_part_risk: '{n} high-risk herb(s)',
+    dose_confirm: 'Dose checked',
+    dose_progress: 'Doses checked against the recording: {n} of {total}',
 
     dev_sample_pipeline: 'Run pipeline on sample text (dev)',
     dev_sample_audio: 'Transcribe sample audio file (dev)',
@@ -92,6 +94,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_verify: '{n} 项识别存疑',
     review_part_range: '{n} 项超出常规剂量',
     review_part_risk: '{n} 味高风险药材',
+    dose_confirm: '剂量已核对',
+    dose_progress: '已对照录音核对剂量：{n} / {total}',
 
     dev_sample_pipeline: '用示例文字运行流程（开发）',
     dev_sample_audio: '转写示例音频文件（开发）',

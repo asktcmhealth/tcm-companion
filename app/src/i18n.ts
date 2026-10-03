@@ -71,6 +71,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_verify: "{n} uncertain match(es)",
     review_part_range: "{n} outside typical dose",
     review_part_risk: "{n} high-risk herb(s)",
+    dose_confirm: "Dose checked",
+    dose_progress: "Doses checked against the recording: {n} of {total}",
 
     job_queued_msg: "Waiting in the queue — results will appear here when this patient is done.",
     job_active_msg: "Working on this patient now — results will appear here.",
@@ -150,6 +152,8 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_verify: "{n} 项识别存疑",
     review_part_range: "{n} 项超出常规剂量",
     review_part_risk: "{n} 味高风险药材",
+    dose_confirm: "剂量已核对",
+    dose_progress: "已对照录音核对剂量：{n} / {total}",
 
     job_queued_msg: "正在排队——该病人处理完成后，结果会显示在此处。",
     job_active_msg: "正在处理该病人——结果会显示在此处。",

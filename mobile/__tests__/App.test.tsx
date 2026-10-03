@@ -168,6 +168,28 @@ describe('results screen (dev sample: real garbled output)', () => {
     }
   });
 
+  it('starts with no dose confirmed, counts ticks, and resets for a new result', async () => {
+    modelIsPresent();
+    const tree = await launch();
+    await press(tree, 'Run pipeline on sample text');
+    expect(screenText(tree)).toContain('0 of ');
+
+    const boxes = () => tree.root.findAll(n => n.props.accessibilityRole === 'checkbox' && typeof n.props.onPress === 'function');
+    expect(boxes().length).toBeGreaterThan(2);
+    expect(boxes().every(b => b.props.accessibilityState.checked === false)).toBe(true);
+
+    await act(async () => boxes()[0].props.onPress());
+    await act(async () => boxes()[1].props.onPress());
+    expect(screenText(tree)).toContain('2 of ');
+    expect(boxes()[0].props.accessibilityState.checked).toBe(true);
+
+    await act(async () => boxes()[0].props.onPress()); // untick
+    expect(screenText(tree)).toContain('1 of ');
+
+    await press(tree, 'Run pipeline on sample text'); // a fresh result starts clean
+    expect(screenText(tree)).toContain('0 of ');
+  });
+
   it('keeps the transcript hidden until asked for', async () => {
     modelIsPresent();
     const tree = await launch();

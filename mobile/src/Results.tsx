@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { HerbEntry, AcupointEntry } from './pipeline';
 import type { Theme } from './theme';
 
@@ -31,7 +31,19 @@ export function ReviewBanner({ parts, theme, t }: { parts: string[]; theme: Them
 
 const countPart = (t: TFn, key: string, n: number) => (n > 0 ? t(key, { n }) : '');
 
-export function HerbList({ herbs, theme, t }: { herbs: HerbEntry[]; theme: Theme; t: TFn }) {
+export function HerbList({
+  herbs,
+  theme,
+  t,
+  confirmed,
+  onToggleDose,
+}: {
+  herbs: HerbEntry[];
+  theme: Theme;
+  t: TFn;
+  confirmed: ReadonlySet<number>;
+  onToggleDose: (index: number) => void;
+}) {
   const parts = [
     countPart(t, 'review_part_verify', herbs.filter(h => h.ambiguous).length),
     countPart(t, 'review_part_range', herbs.filter(h => h.dosageWarning).length),
@@ -41,18 +53,12 @@ export function HerbList({ herbs, theme, t }: { herbs: HerbEntry[]; theme: Theme
   return (
     <View>
       <ReviewBanner parts={parts} theme={theme} t={t} />
+      <Text accessibilityRole="text" style={[styles.progress, { color: theme.inkMuted }]}>
+        {t('dose_progress', { n: confirmed.size, total: herbs.length })}
+      </Text>
       {herbs.map((h, i) => (
         <View
           key={`${h.name}-${i}`}
-          accessible
-          accessibilityLabel={[
-            `${h.name} ${h.dosage} ${h.unit}`,
-            h.ambiguous ? t('verify_note', { alt: h.ambiguousWith ?? '?' }) : '',
-            h.highRisk ? t('badge_high_risk') : '',
-            h.dosageWarning ? h.dosageCheckMessage : '',
-          ]
-            .filter(Boolean)
-            .join('. ')}
           style={[
             styles.row,
             { backgroundColor: theme.card, borderColor: theme.border },
@@ -79,6 +85,23 @@ export function HerbList({ herbs, theme, t }: { herbs: HerbEntry[]; theme: Theme
               {t('verify_note', { alt: h.ambiguousWith ?? '?' })}
             </Text>
           )}
+          <Pressable
+            onPress={() => onToggleDose(i)}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: confirmed.has(i) }}
+            accessibilityLabel={`${h.name} ${h.dosage} ${h.unit}: ${t('dose_confirm')}`}
+            hitSlop={8}
+            style={styles.confirmRow}>
+            <View
+              style={[
+                styles.box,
+                { borderColor: theme.inkMuted },
+                confirmed.has(i) && { backgroundColor: theme.verifyInk, borderColor: theme.verifyInk },
+              ]}>
+              {confirmed.has(i) && <Text style={styles.tick}>✓</Text>}
+            </View>
+            <Text style={[styles.confirmLabel, { color: theme.inkMuted }]}>{t('dose_confirm')}</Text>
+          </Pressable>
         </View>
       ))}
     </View>
@@ -138,5 +161,10 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
   chipText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  progress: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, minHeight: 32 },
+  box: { width: 22, height: 22, borderWidth: 2, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
+  tick: { color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 16 },
+  confirmLabel: { fontSize: 13 },
   note: { fontSize: 12.5, marginTop: 4, lineHeight: 17 },
 });

@@ -132,6 +132,18 @@ function Screen(): React.JSX.Element {
   const [downloadFraction, setDownloadFraction] = useState(0);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [output, setOutput] = useState<PipelineOutput | null>(null);
+  // Doses the physician has ticked off for the current result. A new result
+  // (new object) always starts with nothing ticked.
+  const [confirmedDoses, setConfirmedDoses] = useState<ReadonlySet<number>>(new Set());
+  useEffect(() => setConfirmedDoses(new Set()), [output]);
+  const toggleDose = useCallback((index: number) => {
+    setConfirmedDoses(prev => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }, []);
   const [showTranscript, setShowTranscript] = useState(false);
   const [level, setLevel] = useState(0);
 
@@ -460,7 +472,7 @@ function Screen(): React.JSX.Element {
               </Text>
               <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
               {output.herbs.length > 0 ? (
-                <HerbList herbs={output.herbs} theme={theme} t={t} />
+                <HerbList herbs={output.herbs} theme={theme} t={t} confirmed={confirmedDoses} onToggleDose={toggleDose} />
               ) : (
                 <Text style={styles.emptyState}>
                   {output.prescriptionSectionFound ? t('empty_no_herbs') : t('empty_no_prescription')}

@@ -312,7 +312,12 @@ function countPart(key: string, n: number): string {
   return n > 0 ? t(key).replace("{n}", String(n)) : "";
 }
 
-function renderPrescription(herbs: HerbEntry[], sectionFound: boolean): string {
+// Which doses the physician has ticked off, per job (in memory only). Speech
+// recognition can turn "20" into "10" and nothing in the audio-to-text step can
+// tell, so every dose is checked by a person; nothing is pre-ticked.
+const confirmedDoses = new Map<string, Set<number>>();
+
+function renderPrescription(herbs: HerbEntry[], sectionFound: boolean, confirmed: Set<number>): string {
   // An empty list has two very different meanings. If no "处方" trigger was
   // recognized nothing was even searched -- the physician must not read that as
   // "nothing was prescribed".
@@ -334,14 +339,17 @@ function renderPrescription(herbs: HerbEntry[], sectionFound: boolean): string {
       if (h.ambiguous) badges.push(`<span class="badge badge-verify">${t("badge_verify")}</span>`);
       if (h.high_risk) badges.push(`<span class="badge badge-high-risk">${t("badge_high_risk")}</span>`);
       if (h.dosage_warning) badges.push(`<span class="badge badge-out-of-range">${esc(h.dosage_check_message)}</span>`);
+      const i = herbs.indexOf(h);
       return `<li class="entry-row${h.ambiguous ? " entry-row-verify" : ""}">
         <span class="entry-main">${esc(h.name)} <span class="entry-meta">${esc(h.dosage)}${esc(h.unit)}</span></span>
         <span class="entry-badges">${badges.join("")}</span>
+        <label class="dose-confirm"><input type="checkbox" data-dose-index="${i}"${confirmed.has(i) ? " checked" : ""} /> ${t("dose_confirm")}</label>
         ${h.ambiguous ? `<span class="entry-note">${verifyNote(h.ambiguous_with)}</span>` : ""}
       </li>`;
     })
     .join("");
-  return `${banner}<ul class="entry-list">${rows}</ul>`;
+  const progress = t("dose_progress").replace("{n}", String(confirmed.size)).replace("{total}", String(herbs.length));
+  return `${banner}<p class="dose-progress" role="status">${progress}</p><ul class="entry-list">${rows}</ul>`;
 }
 
 function renderAcupuncture(points: AcupointEntry[]): string {
@@ -429,7 +437,21 @@ function renderSelectedJob() {
   panel.hidden = false;
   const result = job.result;
   noteEl.textContent = result.consultation_note || t("empty_note");
-  prescriptionEl.innerHTML = renderPrescription(result.prescription.herbs, result.prescription_spans_found > 0);
+  if (!confirmedDoses.has(job.id)) confirmedDoses.set(job.id, new Set());
+  prescriptionEl.innerHTML = renderPrescription(
+    result.prescription.herbs,
+    result.prescription_spans_found > 0,
+    confirmedDoses.get(job.id)!,
+  );
+  prescriptionEl.onchange = (event) => {
+    const box = event.target as HTMLInputElement;
+    const index = Number(box.dataset.doseIndex);
+    if (Number.isNaN(index)) return;
+    const set = confirmedDoses.get(job.id)!;
+    if (box.checked) set.add(index);
+    else set.delete(index);
+    renderSelectedJob();
+  };
   acupunctureEl.innerHTML = renderAcupuncture(result.acupuncture.points);
   deidEl.innerHTML = renderDeid(result.deid_report);
   rawEl.textContent = JSON.stringify(result, null, 2);
