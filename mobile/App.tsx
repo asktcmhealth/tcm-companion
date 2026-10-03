@@ -22,6 +22,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StatusBar,
   StyleSheet,
   Text,
@@ -42,6 +43,7 @@ import { defaultLang, translate, type Lang } from './src/i18n';
 import { useTheme, type Theme } from './src/theme';
 import { HerbList, PointList } from './src/Results';
 import { RecordButton } from './src/RecordButton';
+import { buildDraftText } from './src/exportDraft';
 import { logAutoTest, readAutoTestPlan, writeAutoTestResult, type AutoTestPlan } from './src/autoTest';
 
 type Stage =
@@ -490,6 +492,18 @@ function Screen(): React.JSX.Element {
                 <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
                 <PointList points={output.points} theme={theme} t={t} />
               </View>
+            )}
+
+            {(output.herbs.length > 0 || output.points.length > 0) && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() =>
+                  // A dismissed share sheet is not an error; only the text leaves the app.
+                  void Share.share({ message: buildDraftText(output.herbs, output.points, confirmedDoses, t) }).catch(() => {})
+                }
+                style={styles.linkButton}>
+                <Text style={styles.linkButtonText}>{t('share_draft')}</Text>
+              </Pressable>
             )}
 
             <Pressable

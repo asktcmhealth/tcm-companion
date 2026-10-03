@@ -51,6 +51,10 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_range: '{n} outside typical dose',
     review_part_risk: '{n} high-risk herb(s)',
     dose_confirm: 'Dose checked',
+    share_draft: 'Share draft',
+    export_header: 'DRAFT from speech recognition - not signed off. Physician must review every entry.',
+    export_verify: 'verify - could also be {alt}',
+    export_unchecked: 'dose not yet checked',
     dose_progress: 'Doses checked against the recording: {n} of {total}',
 
     dev_sample_pipeline: 'Run pipeline on sample text (dev)',
@@ -95,6 +99,10 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_range: '{n} 项超出常规剂量',
     review_part_risk: '{n} 味高风险药材',
     dose_confirm: '剂量已核对',
+    share_draft: '分享草稿',
+    export_header: '语音识别草稿——尚未签署。医师须逐项核对。',
+    export_verify: '请核对——也可能是“{alt}”',
+    export_unchecked: '剂量尚未核对',
     dose_progress: '已对照录音核对剂量：{n} / {total}',
 
     dev_sample_pipeline: '用示例文字运行流程（开发）',
