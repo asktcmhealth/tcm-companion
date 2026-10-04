@@ -236,6 +236,20 @@ Findings from first physician interview. Validate with 2–3 more before finalis
 
 ---
 
+## Mobile app: data-handling decisions (2026-10)
+
+- **Mobile never sends transcripts to a language model.** The phone app transcribes, corrects and
+  extracts entirely on-device and sends nothing anywhere. Therefore it carries no de-identification
+  layer: the de-identification pipeline (regex + two BERT NER models) stays desktop-only, because
+  the NER models are too large for the phone and a rules-only port would be weaker than it looks.
+  Revisit only if mobile notes must reach the LLM; then either send only the already-extracted
+  herbs/doses/points (structured, no free text) or route the transcript through the full
+  de-identification pipeline first. Never send raw mobile transcript text to an LLM.
+- **Audio retention:** in-app recordings are deleted after 30 days by default (user-selectable 90).
+  `delete_on_sign` is not offered until a sign-off step exists.
+- **Shared/copied drafts** contain only herbs/doses and acupoints (never the transcript), start with an
+  "unsigned speech-recognition draft" warning, and mark uncertain or unchecked entries inline.
+
 ## Failure Modes Registry
 
 ```
