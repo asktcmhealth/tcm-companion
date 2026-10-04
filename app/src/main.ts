@@ -703,7 +703,33 @@ function setupTabs() {
   });
 }
 
+// Housekeeping: in-app recordings older than the chosen window are deleted at
+// launch and whenever the window changes (default 30 days).
+function setupRetention() {
+  const select = document.querySelector<HTMLSelectElement>("#retention-select");
+  if (!select) return;
+  let days = "30";
+  try {
+    const saved = localStorage.getItem("tcm-retention-days");
+    if (saved === "30" || saved === "90") days = saved;
+  } catch {
+    // storage unavailable: keep the default
+  }
+  select.value = days;
+  const purge = () => void invoke("purge_old_recordings", { days: Number(select.value) }).catch(() => {});
+  select.addEventListener("change", () => {
+    try {
+      localStorage.setItem("tcm-retention-days", select.value);
+    } catch {
+      // not persisted; still applied now
+    }
+    purge();
+  });
+  purge();
+}
+
 window.addEventListener("DOMContentLoaded", () => {
+  setupRetention();
   setupTabs();
   setupLangToggle();
   applyTranslations();

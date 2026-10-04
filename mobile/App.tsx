@@ -44,6 +44,7 @@ import { useTheme, type Theme } from './src/theme';
 import { HerbList, PointList } from './src/Results';
 import { RecordButton } from './src/RecordButton';
 import { buildDraftText } from './src/exportDraft';
+import { DEFAULT_RETENTION_DAYS, RETENTION_OPTIONS, loadRetentionDays, purgeOldRecordings, saveRetentionDays } from './src/retention';
 import { logAutoTest, readAutoTestPlan, writeAutoTestResult, type AutoTestPlan } from './src/autoTest';
 
 type Stage =
@@ -139,6 +140,20 @@ function Screen(): React.JSX.Element {
   // (new object) always starts with nothing ticked.
   const [confirmedDoses, setConfirmedDoses] = useState<ReadonlySet<number>>(new Set());
   useEffect(() => setConfirmedDoses(new Set()), [output]);
+  const [retentionDays, setRetentionDays] = useState<number>(DEFAULT_RETENTION_DAYS);
+  useEffect(() => {
+    // Housekeeping at launch: remove recordings past the retention window.
+    void loadRetentionDays().then(days => {
+      setRetentionDays(days);
+      return purgeOldRecordings(days);
+    });
+  }, []);
+  const cycleRetention = useCallback(() => {
+    const next = RETENTION_OPTIONS[(RETENTION_OPTIONS.indexOf(retentionDays as 30 | 90) + 1) % RETENTION_OPTIONS.length];
+    setRetentionDays(next);
+    void saveRetentionDays(next).catch(() => {});
+    void purgeOldRecordings(next);
+  }, [retentionDays]);
   const toggleDose = useCallback((index: number) => {
     setConfirmedDoses(prev => {
       const next = new Set(prev);
@@ -450,6 +465,10 @@ function Screen(): React.JSX.Element {
             <Text style={styles.bodyText}>{t('transcribing_hint')}</Text>
           </View>
         )}
+
+        <Pressable accessibilityRole="button" onPress={cycleRetention} style={styles.linkButton}>
+          <Text style={[styles.hint, { marginTop: 0 }]}>{t('retention_label', { days: retentionDays })}</Text>
+        </Pressable>
 
         {__DEV__ && stage === 'ready' && (
           <View style={styles.devRow}>

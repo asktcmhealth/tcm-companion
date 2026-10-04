@@ -40,6 +40,37 @@ fn save_recording(bytes: Vec<u8>, extension: String) -> Result<String, String> {
     Ok(path.to_string_lossy().to_string())
 }
 
+// Deletes this app's own in-app recordings (tcm_recording_*) older than
+// max_age_days from `dir`. Files the physician picked from disk are never in
+// this folder under this name, so they are never touched. Returns how many
+// were removed; individual failures are skipped, never fatal.
+fn purge_old_recordings_in(dir: &std::path::Path, max_age_days: u64) -> usize {
+    let max_age = std::time::Duration::from_secs(max_age_days * 24 * 60 * 60);
+    let mut removed = 0;
+    if let Ok(entries) = std::fs::read_dir(dir) {
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if !name.starts_with("tcm_recording_") {
+                continue;
+            }
+            let age = entry
+                .metadata()
+                .and_then(|m| m.modified())
+                .ok()
+                .and_then(|t| t.elapsed().ok());
+            if matches!(age, Some(a) if a > max_age) && std::fs::remove_file(entry.path()).is_ok() {
+                removed += 1;
+            }
+        }
+    }
+    removed
+}
+
+#[tauri::command]
+fn purge_old_recordings(days: u64) -> usize {
+    purge_old_recordings_in(&std::env::temp_dir(), days)
+}
+
 #[tauri::command]
 async fn run_note_pipeline(app: tauri::AppHandle, transcript: String) -> Result<String, String> {
     log(&format!("run_note_pipeline: start, transcript len={}", transcript.len()));
@@ -142,7 +173,34 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![save_recording, run_note_pipeline, run_transcribe_and_process])
+        .invoke_handler(tauri::generate_handler![save_recording, purge_old_recordings, run_note_pipeline, run_transcribe_and_process])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{Duration, SystemTime};
+
+    fn make(dir: &std::path::Path, name: &str, age_days: u64) {
+        let path = dir.join(name);
+        std::fs::write(&path, b"x").unwrap();
+        let when = SystemTime::now() - Duration::from_secs(age_days * 24 * 60 * 60);
+        std::fs::File::options().write(true).open(&path).unwrap().set_modified(when).unwrap();
+    }
+
+    #[test]
+    fn purges_only_old_app_recordings() {
+        let dir = std::env::temp_dir().join(format!("tcm_purge_test_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        make(&dir, "tcm_recording_old.webm", 31);
+        make(&dir, "tcm_recording_new.webm", 29);
+        make(&dir, "someone_elses_old.webm", 400);
+        assert_eq!(purge_old_recordings_in(&dir, 30), 1);
+        assert!(!dir.join("tcm_recording_old.webm").exists());
+        assert!(dir.join("tcm_recording_new.webm").exists());
+        assert!(dir.join("someone_elses_old.webm").exists());
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }

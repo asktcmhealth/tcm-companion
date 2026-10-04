@@ -146,6 +146,24 @@ body {
   max-width: 52ch;
 }
 
+.retention {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.retention select {
+  font: inherit;
+  color: inherit;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.4rem;
+}
+
 .local-badge {
   display: inline-flex;
   align-items: center;

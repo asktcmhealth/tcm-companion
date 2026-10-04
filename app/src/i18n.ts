@@ -20,6 +20,9 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     headline: "Never wait between patients again.",
     subline: "Recording, transcribing, and note-writing all happen in the background — so paperwork doesn't slow down your day.",
     local_badge: "Runs fully offline",
+    retention_label: "Delete in-app recordings after",
+    retention_30: "30 days",
+    retention_90: "90 days",
     lang_toggle: "中文",
 
     step1_title: "Add a consultation",
@@ -101,6 +104,9 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     headline: "看诊之间，不再等待。",
     subline: "录音、转写、记录都在后台完成——文书工作不再拖慢你的一天。",
     local_badge: "完全离线运行",
+    retention_label: "应用内录音保留时间",
+    retention_30: "30 天",
+    retention_90: "90 天",
     lang_toggle: "EN",
 
     step1_title: "新增问诊",
