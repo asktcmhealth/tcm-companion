@@ -1,0 +1,65 @@
+ACUPUNCTURE SIMULATION SCRIPT (script 3) -- read aloud at a normal consultation pace.
+No real patient details: ages/symptoms are invented. Do not add names, phone numbers or NRIC.
+Say "取穴" clearly before each list of points, and read the points in the order written.
+Pause about one second between points. Roughly 3 minutes in total.
+
+---
+
+FIRST PATIENT
+
+今天来的病人是一位五十二岁的女性，主诉是右肩疼痛两个月，抬手困难，夜间加重。
+
+舌质淡暗，苔薄白。脉弦紧。
+
+辨证：风寒湿痹，气滞血瘀。治法：祛风散寒，通络止痛。
+
+取穴：肩髃右，曲池右，合谷双侧，外关右，肩井右，风池双侧，阳陵泉双侧，足三里双侧，大椎。
+
+手法：平补平泻。
+
+留针三十分钟。
+
+疗程：每周三次，共四周。
+
+---
+
+SECOND PATIENT
+
+第二个病人，男性，四十五岁，主诉是失眠伴胃脘不适一个月，入睡困难，多梦。
+
+舌红，苔薄黄。脉细数。
+
+辨证：心脾两虚，心肾不交。治法：养心安神，健脾和胃。
+
+取穴：神门双侧，内关双侧，三阴交双侧，太溪双侧，中脘，气海，关元，百会，印堂，心俞双侧，脾俞双侧，肾俞双侧。
+
+手法：补法为主。
+
+留针二十五分钟。
+
+疗程：隔天一次，共十次。
+
+---
+
+THIRD PATIENT (short)
+
+第三个病人，女性，三十八岁，主诉是头痛反复发作半年，偏头痛为主，伴情绪烦躁。
+
+舌边红，苔薄白。脉弦。
+
+辨证：肝阳上亢。治法：平肝潜阳，通络止痛。
+
+取穴：太冲双侧，行间双侧，太阳双侧，风池双侧，百会，合谷双侧，足临泣暂不取。
+
+留针二十分钟。
+
+疗程：每周两次，共六次。
+
+---
+
+EXPECTED POINTS (for scoring; not to be read aloud)
+Patient 1: 肩髃(右) 曲池(右) 合谷(双侧) 外关(右) 肩井(右) 风池(双侧) 阳陵泉(双侧) 足三里(双侧) 大椎
+Patient 2: 神门 内关 三阴交 太溪 (all 双侧) 中脘 气海 关元 百会 印堂 心俞 脾俞 肾俞 (俞 points 双侧)
+Patient 3: 太冲 行间 太阳 风池 (双侧) 百会 合谷(双侧)
+Note: 足临泣 is deliberately NOT in the database and is said as "暂不取" (not needled) -- it should
+NOT appear in the output. If it does, that is a false positive worth knowing about.
