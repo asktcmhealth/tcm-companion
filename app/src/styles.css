@@ -146,6 +146,12 @@ body {
   max-width: 52ch;
 }
 
+.copy-status {
+  margin-left: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
 .retention {
   display: inline-flex;
   align-items: center;

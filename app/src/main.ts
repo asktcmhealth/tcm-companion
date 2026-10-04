@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { t, getLang, setLang, stagePhrases } from "./i18n";
+import { buildDraftText } from "./exportDraft";
 
 // `ambiguous`/`ambiguous_with` are optional because a sidecar binary built
 // before the ambiguity check existed simply doesn't emit them -- treated as
@@ -703,6 +704,25 @@ function setupTabs() {
   });
 }
 
+async function copyDraft() {
+  const job = jobs.find((j) => j.id === selectedJobId);
+  const status = document.querySelector<HTMLElement>("#copy-status");
+  if (!job?.result || !status) return;
+  const text = buildDraftText(
+    job.result.prescription.herbs,
+    job.result.acupuncture.points,
+    confirmedDoses.get(job.id) ?? new Set(),
+    t,
+  );
+  try {
+    await navigator.clipboard.writeText(text);
+    status.textContent = t("copy_done");
+    setTimeout(() => (status.textContent = ""), 2500);
+  } catch (err) {
+    status.textContent = errorText(err);
+  }
+}
+
 // Housekeeping: in-app recordings older than the chosen window are deleted at
 // launch and whenever the window changes (default 30 days).
 function setupRetention() {
@@ -737,4 +757,5 @@ window.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#pick-audio-button")?.addEventListener("click", pickAndQueueAudio);
   document.querySelector("#record-button")?.addEventListener("click", toggleRecording);
   document.querySelector("#job-retry")?.addEventListener("click", retrySelectedJob);
+  document.querySelector("#copy-draft")?.addEventListener("click", copyDraft);
 });

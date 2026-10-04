@@ -75,6 +75,11 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_range: "{n} outside typical dose",
     review_part_risk: "{n} high-risk herb(s)",
     dose_confirm: "Dose checked",
+    copy_draft: "Copy draft",
+    copy_done: "Copied",
+    export_header: "DRAFT from speech recognition - not signed off. Physician must review every entry.",
+    export_verify: "verify - could also be {alt}",
+    export_unchecked: "dose not yet checked",
     dose_progress: "Doses checked against the recording: {n} of {total}",
 
     job_queued_msg: "Waiting in the queue — results will appear here when this patient is done.",
@@ -159,6 +164,11 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     review_part_range: "{n} 项超出常规剂量",
     review_part_risk: "{n} 味高风险药材",
     dose_confirm: "剂量已核对",
+    copy_draft: "复制草稿",
+    copy_done: "已复制",
+    export_header: "语音识别草稿——尚未签署。医师须逐项核对。",
+    export_verify: "请核对——也可能是“{alt}”",
+    export_unchecked: "剂量尚未核对",
     dose_progress: "已对照录音核对剂量：{n} / {total}",
 
     job_queued_msg: "正在排队——该病人处理完成后，结果会显示在此处。",
