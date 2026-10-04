@@ -29,6 +29,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { activateKeepAwake, deactivateKeepAwake } from '@sayem314/react-native-keep-awake';
 import { initWhisper, type WhisperContext } from 'whisper.rn/index';
 import { AudioRecorder, SILENCE_PEAK_THRESHOLD } from './src/audioRecorder';
 import {
@@ -169,6 +170,25 @@ function Screen(): React.JSX.Element {
   const recorderRef = useRef<AudioRecorder | null>(null);
 
   const recordingSeconds = useElapsedSeconds(stage === 'recording');
+
+  // A locked screen can pause recording or transcription (iOS especially), so
+  // the screen is held on only while one of them is running -- never otherwise.
+  const busy = stage === 'recording' || stage === 'transcribing';
+  useEffect(() => {
+    if (!busy) return;
+    try {
+      activateKeepAwake();
+    } catch {
+      // not available: the on-screen reminder to keep the app open still applies
+    }
+    return () => {
+      try {
+        deactivateKeepAwake();
+      } catch {
+        // nothing to undo
+      }
+    };
+  }, [busy]);
   const transcribingSeconds = useElapsedSeconds(stage === 'transcribing');
 
   const fail = useCallback((err: unknown, retry: Failure['retry']) => {

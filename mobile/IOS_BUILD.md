@@ -30,8 +30,8 @@ the first Simulator build is the real test.
 
 ## Only a real iPhone can answer
 - Speed and memory of `ggml-medium-q5_0` (Metal / Core ML are on by default in whisper.rn).
-- Whether iOS suspends transcription when the screen auto-locks. The app tells the user to
-  keep it open; a keep-awake module is the fix if it matters (deliberately not added yet:
-  the app is meant to stay small).
+- Whether the screen-on hold works. The app keeps the screen awake only while recording or
+  transcribing (`@sayem314/react-native-keep-awake`); confirm on a device that a long
+  transcription survives the auto-lock timeout.
 - Denied microphone permission records silence without an error on iOS. The recorder
   detects this from input level and warns after 4 seconds; confirm it fires on a device.

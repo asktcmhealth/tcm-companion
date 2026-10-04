@@ -17,6 +17,7 @@ jest.mock('whisper.rn/index', () => ({ initWhisper: jest.fn() }));
 jest.mock('whisper.rn/realtime-transcription/adapters/AudioPcmStreamAdapter', () => ({
   AudioPcmStreamAdapter: class {},
 }));
+jest.mock('@sayem314/react-native-keep-awake', () => ({ activateKeepAwake: jest.fn(), deactivateKeepAwake: jest.fn() }));
 jest.mock('react-native-fs', () => ({
   __esModule: true,
   default: {
@@ -120,6 +121,29 @@ describe('model present', () => {
     await press(tree, '中文');
     expect(screenText(tree)).toContain('录音');
     expect(screenText(tree)).toContain('完全离线运行');
+  });
+});
+
+describe('keeping the screen on', () => {
+  const keepAwake = jest.requireMock('@sayem314/react-native-keep-awake');
+
+  it('holds the screen on only while transcribing, and lets go afterwards', async () => {
+    modelIsPresent();
+    let finish!: (v: { result: string }) => void;
+    initWhisper.mockResolvedValue({
+      release: jest.fn(),
+      transcribe: jest.fn(() => ({ promise: new Promise(resolve => (finish = resolve)) })),
+    });
+    const tree = await launch();
+    expect(keepAwake.activateKeepAwake).not.toHaveBeenCalled();
+
+    await press(tree, 'Transcribe sample audio');
+    expect(keepAwake.activateKeepAwake).toHaveBeenCalledTimes(1);
+    expect(keepAwake.deactivateKeepAwake).not.toHaveBeenCalled();
+
+    await act(async () => finish({ result: '处方：柴胡10克' }));
+    await flush();
+    expect(keepAwake.deactivateKeepAwake).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -12,6 +12,7 @@
   "dependencies": {
     "@fugood/react-native-audio-pcm-stream": "^1.1.4",
     "@react-native/new-app-screen": "0.87.1",
+    "@sayem314/react-native-keep-awake": "^2.0.0",
     "opencc-js": "^1.4.2",
     "pinyin-pro": "^3.29.3",
     "react": "19.2.3",
