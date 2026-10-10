@@ -4,18 +4,57 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-This repo is the **pre-code planning phase** of "TCM Consultation Scribe" — a desktop app that helps
-Singapore-based Traditional Chinese Medicine (TCM) physicians turn a recorded consultation into a
-structured clinical note. There is no application codebase yet. What exists today:
+"TCM Consultation Scribe" helps Singapore-based Traditional Chinese Medicine (TCM) physicians turn a
+recorded consultation into a draft prescription/acupuncture list for the physician to review. There
+are now three runnable parts plus the planning docs:
 
-- A standalone Whisper ASR benchmark script (the only runnable code)
-- Product/architecture/regulatory planning documents that encode locked decisions
-- Physician feedback artifacts that drive the note schema
+- `benchmark/` -- Python correction/extraction engine (fuzzy-pinyin herb and acupoint correction,
+  dosage extraction and range checks, de-identification) and the ASR benchmark scripts.
+- `app/` -- desktop app: Tauri v2 (Rust) + TypeScript UI, with two PyInstaller sidecars
+  (`app/sidecar` = text pipeline, `app/sidecar_whisper` = faster-whisper transcription).
+- `mobile/` -- React Native app (Android; iOS built in the cloud via Codemagic, no Mac needed) running
+  whisper.rn + a TypeScript port of the engine, fully offline.
+- Planning docs below remain the authoritative product/architecture spec.
 
-Treat the planning docs below as authoritative product/architecture spec, not background reading —
-any future implementation must conform to the decisions and constraints they contain.
+Decisions made while building (details in `plan-review.md`, "Mobile app: data-handling decisions"):
+
+- The Python engine and the TypeScript port (`mobile/src/correctHerbs.ts`, `pipeline.ts`) MUST stay
+  in lock-step. Parity is enforced by fixtures generated from Python -- after any engine change run
+  `python benchmark/tests/generate_parity_fixtures.py`, then the mobile tests.
+- Uncertain matches are flagged (ambiguity margin), never silently resolved; every dose gets a
+  physician "dose checked" tick; shared/copied drafts carry the unsigned-draft warning and mark
+  uncertain/unchecked entries. No sign-off step exists yet.
+- Mobile never sends transcripts to an LLM, so de-identification is desktop-only.
+- Audio retention: in-app recordings are deleted after 30 days by default (90 optional).
+- The herb (126) and acupoint (58) databases are DRAFTS with no physician sign-off yet; review
+  sheets are in `physician-review/`. Do not present them as verified.
+- Do not add a Whisper `initial_prompt` herb list: it caused hallucinated paragraphs on desktop and
+  gave no gain on mobile.
+- Real recordings never go in the repo (`audio recording/` is gitignored; script 2 contains
+  patient-style details). Only the script-1 read-aloud was committed, temporarily, for CI.
 
 ## Commands
+
+```
+python -m unittest discover -s benchmark/tests -v      # engine + sidecar regression tests (no pytest)
+python benchmark/tests/generate_parity_fixtures.py     # regenerate mobile parity fixtures from Python
+
+cd mobile && npx jest                                  # mobile tests
+cd mobile && npx tsc --noEmit -p .                     # mobile typecheck
+cd mobile/android && ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a   # Android APK
+
+cd app && npx tsc --noEmit                             # desktop UI typecheck
+cd app && npm run tauri dev                            # run desktop app (run from app/, not ~)
+cd app/src-tauri && cargo test --lib                   # Rust tests
+
+# Rebuild the text sidecar after ANY change under benchmark/ that the desktop pipeline uses
+# (heavy on an 8 GB machine: close other apps first). The installed .exe goes stale otherwise.
+cd app/sidecar && python -m PyInstaller main.spec --noconfirm
+cp app/sidecar/dist/main.exe app/src-tauri/binaries/main-x86_64-pc-windows-msvc.exe
+```
+
+iOS: `codemagic.yaml` (repo root) has simulator build, simulator screenshot, end-to-end (real audio,
+needs `mobile/e2e/audio.m4a` supplied temporarily) and device-build workflows; see `mobile/IOS_BUILD.md`.
 
 Run the Whisper TCM ASR benchmark against a recording:
 
@@ -23,7 +62,7 @@ Run the Whisper TCM ASR benchmark against a recording:
 python benchmark/run_benchmark.py <audio_file.mp3|wav>
 ```
 
-- No `requirements.txt` — the script self-installs `openai-whisper` and `jiwer` via pip on first run.
+- No `requirements.txt` -- the script self-installs `openai-whisper` and `jiwer` via pip on first run.
 - Prompts whether the file is the canonical simulation recording (`benchmark/simulation_script.txt`);
   if yes, it scores herb-name recognition against `SIMULATION_HERBS` with a **95% accuracy pass
   threshold** (physician-set, zero-tolerance for herb errors).
