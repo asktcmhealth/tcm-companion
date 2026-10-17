@@ -45,6 +45,7 @@ import { useTheme, type Theme } from './src/theme';
 import { HerbList, PointList } from './src/Results';
 import { RecordButton } from './src/RecordButton';
 import { buildDraftText } from './src/exportDraft';
+import { applyHerbEdit, applyPointEdit, type HerbEdit, type PointEdit } from './src/herbEdits';
 import { DEFAULT_RETENTION_DAYS, RETENTION_OPTIONS, loadRetentionDays, purgeOldRecordings, saveRetentionDays } from './src/retention';
 import { logAutoTest, readAutoTestPlan, writeAutoTestResult, type AutoTestPlan } from './src/autoTest';
 
@@ -140,7 +141,45 @@ function Screen(): React.JSX.Element {
   // Doses the physician has ticked off for the current result. A new result
   // (new object) always starts with nothing ticked.
   const [confirmedDoses, setConfirmedDoses] = useState<ReadonlySet<number>>(new Set());
-  useEffect(() => setConfirmedDoses(new Set()), [output]);
+  // The physician's corrections to the engine's output (see src/herbEdits.ts).
+  const [herbEdits, setHerbEdits] = useState<Record<number, HerbEdit>>({});
+  const [pointEdits, setPointEdits] = useState<Record<number, PointEdit>>({});
+  useEffect(() => {
+    setConfirmedDoses(new Set());
+    setHerbEdits({});
+    setPointEdits({});
+  }, [output]);
+  const herbs = useMemo(() => (output?.herbs ?? []).map((h, i) => applyHerbEdit(h, herbEdits[i])), [output, herbEdits]);
+  const points = useMemo(() => (output?.points ?? []).map((p, i) => applyPointEdit(p, pointEdits[i])), [output, pointEdits]);
+  const untickDose = useCallback((index: number) => {
+    // A changed herb or dose is a new thing to check against the recording.
+    setConfirmedDoses(prev => {
+      if (!prev.has(index)) return prev;
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
+  }, []);
+  const editHerb = useCallback(
+    (index: number, edit: HerbEdit | null, resetTick: boolean) => {
+      setHerbEdits(prev => {
+        const next = { ...prev };
+        if (edit === null) delete next[index];
+        else next[index] = { ...prev[index], ...edit };
+        return next;
+      });
+      if (resetTick) untickDose(index);
+    },
+    [untickDose],
+  );
+  const editPoint = useCallback((index: number, edit: PointEdit | null) => {
+    setPointEdits(prev => {
+      const next = { ...prev };
+      if (edit === null) delete next[index];
+      else next[index] = { ...prev[index], ...edit };
+      return next;
+    });
+  }, []);
   const [retentionDays, setRetentionDays] = useState<number>(DEFAULT_RETENTION_DAYS);
   useEffect(() => {
     // Housekeeping at launch: remove recordings past the retention window.
@@ -515,7 +554,17 @@ function Screen(): React.JSX.Element {
               </Text>
               <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
               {output.herbs.length > 0 ? (
-                <HerbList herbs={output.herbs} theme={theme} t={t} confirmed={confirmedDoses} onToggleDose={toggleDose} />
+                <HerbList
+                  herbs={herbs}
+                  theme={theme}
+                  t={t}
+                  confirmed={confirmedDoses}
+                  onToggleDose={toggleDose}
+                  onKeep={i => editHerb(i, { resolved: true }, false)}
+                  onSwap={i => editHerb(i, { swap: true }, true)}
+                  onSetDose={(i, grams) => editHerb(i, { dosage: grams }, true)}
+                  onUndo={i => editHerb(i, null, true)}
+                />
               ) : (
                 <Text style={styles.emptyState}>
                   {output.prescriptionSectionFound ? t('empty_no_herbs') : t('empty_no_prescription')}
@@ -529,7 +578,14 @@ function Screen(): React.JSX.Element {
                   {t('result_acupuncture')}
                 </Text>
                 <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
-                <PointList points={output.points} theme={theme} t={t} />
+                <PointList
+                  points={points}
+                  theme={theme}
+                  t={t}
+                  onKeep={i => editPoint(i, { resolved: true })}
+                  onSwap={i => editPoint(i, { swap: true })}
+                  onUndo={i => editPoint(i, null)}
+                />
               </View>
             )}
 
@@ -538,7 +594,7 @@ function Screen(): React.JSX.Element {
                 accessibilityRole="button"
                 onPress={() =>
                   // A dismissed share sheet is not an error; only the text leaves the app.
-                  void Share.share({ message: buildDraftText(output.herbs, output.points, confirmedDoses, t) }).catch(() => {})
+                  void Share.share({ message: buildDraftText(herbs, points, confirmedDoses, t) }).catch(() => {})
                 }
                 style={styles.linkButton}>
                 <Text style={styles.linkButtonText}>{t('share_draft')}</Text>

@@ -7,7 +7,7 @@
  */
 
 import React from 'react';
-import { Text } from 'react-native';
+import { Text, TextInput } from 'react-native';
 import ReactTestRenderer, { act, type ReactTestInstance } from 'react-test-renderer';
 import App from '../App';
 import { MODEL_BYTES } from '../src/whisperModel';
@@ -212,6 +212,49 @@ describe('results screen (dev sample: real garbled output)', () => {
 
     await press(tree, 'Run pipeline on sample text'); // a fresh result starts clean
     expect(screenText(tree)).toContain('0 of ');
+  });
+
+  it('lets the physician keep, swap, retype and undo, and resets the dose tick when something changes', async () => {
+    modelIsPresent();
+    const tree = await launch();
+    await press(tree, 'Run pipeline on sample text');
+
+    const bannerBefore = /(\d+) uncertain match/.exec(screenText(tree));
+    expect(bannerBefore).not.toBeNull();
+    const flaggedBefore = Number(bannerBefore![1]);
+    expect(screenText(tree)).not.toContain('You changed this');
+
+    // swap the first uncertain herb to the alternative the app showed
+    const checkboxes = () =>
+      tree.root.findAll(n => n.props.accessibilityRole === 'checkbox' && typeof n.props.onPress === 'function');
+    await act(async () => checkboxes()[0].props.onPress());
+    expect(screenText(tree)).toContain('1 of ');
+    await press(tree, 'Use ');
+    expect(screenText(tree)).toContain('You changed this');
+    expect(screenText(tree)).toContain('Edited');
+    const afterSwap = /(\d+) uncertain match/.exec(screenText(tree));
+    expect(afterSwap ? Number(afterSwap[1]) : 0).toBeLessThan(flaggedBefore);
+
+    // undo puts the engine's reading back
+    await press(tree, 'Undo');
+    expect(screenText(tree)).not.toContain('You changed this');
+
+    // keep settles the flag without changing the herb
+    await press(tree, 'Keep ');
+    expect(screenText(tree)).toContain('Confirmed');
+    expect(screenText(tree)).not.toContain('You changed this');
+
+    // retype a dose; a bad entry is refused, a good one applies and is re-checked
+    await press(tree, 'Edit dose');
+    const input = () => tree.root.findByType(TextInput);
+    await act(async () => input().props.onChangeText('abc'));
+    await press(tree, 'Save');
+    expect(screenText(tree)).toContain('Enter the dose in grams');
+    await act(async () => input().props.onChangeText('250'));
+    await press(tree, 'Save');
+    expect(screenText(tree)).toContain('250');
+    expect(screenText(tree)).toContain('OUTSIDE typical range');
+    expect(screenText(tree)).toContain('You changed this');
   });
 
   it('keeps the transcript hidden until asked for', async () => {

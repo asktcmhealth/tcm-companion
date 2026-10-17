@@ -73,6 +73,33 @@ class SidecarContract(unittest.TestCase):
         result = run(SCRIPT1_RAW)  # raised ValueError (4 vs 6 tuple) before the fix
         self.assertGreater(len(result["correction_edits"]), 0)
 
+    def test_flagged_herbs_carry_a_ready_to_swap_alternative(self):
+        herbs = run(SCRIPT1_RAW)["prescription"]["herbs"]
+        flagged = [h for h in herbs if h["ambiguous"]]
+        self.assertTrue(flagged)
+        for h in herbs:
+            lo, hi = h["dose_range"]
+            self.assertLess(lo, hi)
+            if not h["ambiguous"]:
+                self.assertNotIn("alternative", h)
+        for h in flagged:
+            alt = h["alternative"]
+            self.assertEqual(alt["name"], h["ambiguous_with"])
+            # recomputed for the alternative herb at the SAME spoken dose
+            from dosage_ranges import check_dosage
+            status, _msg, risk = check_dosage(alt["name"], h["dosage"])
+            self.assertEqual(alt["dosage_warning"], status != "ok")
+            self.assertEqual(alt["high_risk"], risk)
+
+    def test_flagged_acupoints_carry_an_alternative_with_code_and_meridian(self):
+        text = '患者主诉肩周炎。取穴：合古双侧，足三里左，三阴叫右，肩雨，去池。留针30分钟。'
+        points = run(text)["acupuncture"]["points"]
+        flagged = [p for p in points if p.get("ambiguous")]
+        for p in flagged:
+            self.assertEqual(p["alternative"]["name"], p["ambiguous_with"])
+            self.assertTrue(p["alternative"]["code"])
+            self.assertTrue(p["alternative"]["meridian"])
+
     def test_every_herb_carries_ambiguity_fields(self):
         for h in run(SCRIPT1_RAW)["prescription"]["herbs"]:
             self.assertIn("ambiguous", h)

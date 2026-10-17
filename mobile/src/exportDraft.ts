@@ -1,4 +1,4 @@
-import type { HerbEntry, AcupointEntry } from './pipeline';
+import type { EffectiveHerb, EffectivePoint } from './herbEdits';
 
 type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -9,8 +9,8 @@ type TFn = (key: string, vars?: Record<string, string | number>) => string;
 // marked inline. It never includes the transcript or anything about the
 // patient -- only the extracted herbs/doses and acupoints.
 export function buildDraftText(
-  herbs: HerbEntry[],
-  points: AcupointEntry[],
+  herbs: EffectiveHerb[],
+  points: EffectivePoint[],
   confirmedDoses: ReadonlySet<number>,
   t: TFn,
 ): string {
@@ -23,6 +23,7 @@ export function buildDraftText(
       if (h.ambiguous) marks.push(t('export_verify', { alt: h.ambiguousWith ?? '?' }));
       if (h.dosageWarning) marks.push(h.dosageCheckMessage);
       if (h.highRisk) marks.push(t('badge_high_risk'));
+      if (h.edited) marks.push(t('export_edited'));
       if (!confirmedDoses.has(i)) marks.push(t('export_unchecked'));
       lines.push(`- ${h.name} ${h.dosage}${h.unit}${marks.length ? `  [${marks.join('; ')}]` : ''}`);
     });
@@ -33,7 +34,10 @@ export function buildDraftText(
     lines.push(t('result_acupuncture'));
     for (const p of points) {
       const lat = p.laterality ? ` (${p.laterality})` : '';
-      const mark = p.ambiguous ? `  [${t('export_verify', { alt: p.ambiguousWith ?? '?' })}]` : '';
+      const notes: string[] = [];
+      if (p.ambiguous) notes.push(t('export_verify', { alt: p.ambiguousWith ?? '?' }));
+      if (p.edited) notes.push(t('export_edited'));
+      const mark = notes.length ? `  [${notes.join('; ')}]` : '';
       lines.push(`- ${p.name}${lat} ${p.code}${mark}`);
     }
     lines.push('');

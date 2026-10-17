@@ -1,6 +1,6 @@
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import type { HerbEntry, AcupointEntry } from './pipeline';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { parseDose, type EffectiveHerb, type EffectivePoint } from './herbEdits';
 import type { Theme } from './theme';
 
 export type TFn = (key: string, vars?: Record<string, string | number>) => string;
@@ -29,6 +29,29 @@ export function ReviewBanner({ parts, theme, t }: { parts: string[]; theme: Them
   );
 }
 
+function LinkButton({
+  label,
+  onPress,
+  theme,
+  accessibilityLabel,
+}: {
+  label: string;
+  onPress: () => void;
+  theme: Theme;
+  accessibilityLabel?: string;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      onPress={onPress}
+      hitSlop={8}
+      style={[styles.actionButton, { borderColor: theme.border, backgroundColor: theme.cardSunken }]}>
+      <Text style={[styles.actionText, { color: theme.ink }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
 const countPart = (t: TFn, key: string, n: number) => (n > 0 ? t(key, { n }) : '');
 
 export function HerbList({
@@ -37,13 +60,38 @@ export function HerbList({
   t,
   confirmed,
   onToggleDose,
+  onKeep,
+  onSwap,
+  onSetDose,
+  onUndo,
 }: {
-  herbs: HerbEntry[];
+  herbs: EffectiveHerb[];
   theme: Theme;
   t: TFn;
   confirmed: ReadonlySet<number>;
   onToggleDose: (index: number) => void;
+  onKeep: (index: number) => void;
+  onSwap: (index: number) => void;
+  onSetDose: (index: number, grams: number) => void;
+  onUndo: (index: number) => void;
 }) {
+  const [editing, setEditing] = useState<number | null>(null);
+  const [draft, setDraft] = useState('');
+  const [invalid, setInvalid] = useState(false);
+  const startEdit = (i: number, dosage: number) => {
+    setEditing(i);
+    setDraft(String(dosage));
+    setInvalid(false);
+  };
+  const saveEdit = (i: number) => {
+    const grams = parseDose(draft);
+    if (grams === null) {
+      setInvalid(true);
+      return;
+    }
+    onSetDose(i, grams);
+    setEditing(null);
+  };
   const parts = [
     countPart(t, 'review_part_verify', herbs.filter(h => h.ambiguous).length),
     countPart(t, 'review_part_range', herbs.filter(h => h.dosageWarning).length),
@@ -75,6 +123,14 @@ export function HerbList({
               {h.highRisk && (
                 <Chip label={t('badge_high_risk')} bg={theme.warnBg} ink={theme.warnInk} border={theme.warnBorder} />
               )}
+              {(h.edited || h.confirmed) && (
+                <Chip
+                  label={t(h.edited ? 'chip_edited' : 'chip_confirmed')}
+                  bg={theme.cardSunken}
+                  ink={theme.ink}
+                  border={theme.border}
+                />
+              )}
             </View>
           </View>
           {h.dosageWarning && (
@@ -83,6 +139,56 @@ export function HerbList({
           {h.ambiguous && (
             <Text style={[styles.note, { color: theme.inkMuted }]}>
               {t('verify_note', { alt: h.ambiguousWith ?? '?' })}
+            </Text>
+          )}
+          {h.edited && (
+            <Text style={[styles.note, { color: theme.inkMuted }]}>
+              {t('edited_from', { name: h.originalName, dose: h.originalDosage })}
+            </Text>
+          )}
+          {editing === i ? (
+            <View style={styles.editRow}>
+              <TextInput
+                value={draft}
+                onChangeText={text => {
+                  setDraft(text);
+                  setInvalid(false);
+                }}
+                keyboardType="decimal-pad"
+                autoFocus
+                accessibilityLabel={`${h.name}: ${t('edit_dose')}`}
+                onSubmitEditing={() => saveEdit(i)}
+                style={[
+                  styles.input,
+                  { color: theme.ink, borderColor: invalid ? theme.danger : theme.border, backgroundColor: theme.card },
+                ]}
+              />
+              <Text style={{ color: theme.inkMuted }}>g</Text>
+              <LinkButton label={t('dose_save')} onPress={() => saveEdit(i)} theme={theme} />
+              <LinkButton label={t('dose_cancel')} onPress={() => setEditing(null)} theme={theme} />
+            </View>
+          ) : (
+            <View style={styles.actionRow}>
+              {h.ambiguous && (
+                <>
+                  <LinkButton label={t('keep_term', { name: h.name })} onPress={() => onKeep(i)} theme={theme} />
+                  {h.ambiguousWith && (
+                    <LinkButton label={t('use_term', { name: h.ambiguousWith })} onPress={() => onSwap(i)} theme={theme} />
+                  )}
+                </>
+              )}
+              <LinkButton
+                label={t('edit_dose')}
+                onPress={() => startEdit(i, h.dosage)}
+                theme={theme}
+                accessibilityLabel={`${h.name} ${t('edit_dose')}`}
+              />
+              {(h.edited || h.confirmed) && <LinkButton label={t('undo_edit')} onPress={() => onUndo(i)} theme={theme} />}
+            </View>
+          )}
+          {editing === i && invalid && (
+            <Text accessibilityRole="alert" style={[styles.note, { color: theme.danger }]}>
+              {t('dose_invalid')}
             </Text>
           )}
           <Pressable
@@ -108,7 +214,21 @@ export function HerbList({
   );
 }
 
-export function PointList({ points, theme, t }: { points: AcupointEntry[]; theme: Theme; t: TFn }) {
+export function PointList({
+  points,
+  theme,
+  t,
+  onKeep,
+  onSwap,
+  onUndo,
+}: {
+  points: EffectivePoint[];
+  theme: Theme;
+  t: TFn;
+  onKeep: (index: number) => void;
+  onSwap: (index: number) => void;
+  onUndo: (index: number) => void;
+}) {
   const parts = [countPart(t, 'review_part_verify', points.filter(p => p.ambiguous).length)].filter(Boolean);
   return (
     <View>
@@ -139,11 +259,32 @@ export function PointList({ points, theme, t }: { points: AcupointEntry[]; theme
             {p.ambiguous && (
               <Chip label={t('badge_verify')} bg={theme.verifyBg} ink={theme.verifyInk} border={theme.verifyBorder} />
             )}
+            {(p.edited || p.confirmed) && (
+              <Chip
+                label={t(p.edited ? 'chip_edited' : 'chip_confirmed')}
+                bg={theme.cardSunken}
+                ink={theme.ink}
+                border={theme.border}
+              />
+            )}
           </View>
           {p.ambiguous && (
             <Text style={[styles.note, { color: theme.inkMuted }]}>
               {t('verify_note', { alt: p.ambiguousWith ?? '?' })}
             </Text>
+          )}
+          {(p.ambiguous || p.edited || p.confirmed) && (
+            <View style={styles.actionRow}>
+              {p.ambiguous && (
+                <>
+                  <LinkButton label={t('keep_term', { name: p.name })} onPress={() => onKeep(i)} theme={theme} />
+                  {p.ambiguousWith && (
+                    <LinkButton label={t('use_term', { name: p.ambiguousWith })} onPress={() => onSwap(i)} theme={theme} />
+                  )}
+                </>
+              )}
+              {(p.edited || p.confirmed) && <LinkButton label={t('undo_edit')} onPress={() => onUndo(i)} theme={theme} />}
+            </View>
           )}
         </View>
       ))}
@@ -161,6 +302,18 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
   chipText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.3 },
+  actionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  editRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  actionButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    minHeight: 32,
+    justifyContent: 'center',
+  },
+  actionText: { fontSize: 13, fontWeight: '600' },
+  input: { borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, minWidth: 64, fontSize: 15 },
   progress: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, minHeight: 32 },
   box: { width: 22, height: 22, borderWidth: 2, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },

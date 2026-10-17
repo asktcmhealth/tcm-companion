@@ -29,6 +29,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "benchmar
 from correct_herbs import correct_prescription_only, correct_acupuncture_only
 from pipeline import extract_prescription, extract_acupuncture, build_consultation_note
 from dosage_ranges import check_dosage
+from herb_database import HERB_DATABASE
+from acupoint_database import ACUPOINT_DATABASE
 from deid_layer import deidentify
 
 
@@ -44,6 +46,20 @@ def process(transcript_text):
         h["dosage_warning"] = (status != "ok")
         h["dosage_check_message"] = msg
         h["high_risk"] = high_risk
+        h["dose_range"] = list(HERB_DATABASE[h["name"]]["dose_g"])
+        # What the physician gets if they choose the near-tied runner-up
+        # instead: the same entry recomputed for that herb, so the UI can swap
+        # without needing the herb database. Only for flagged entries.
+        alt = h.get("ambiguous_with")
+        if h["ambiguous"] and alt in HERB_DATABASE:
+            alt_status, alt_msg, alt_risk = check_dosage(alt, h["dosage"])
+            h["alternative"] = {
+                "name": alt,
+                "dosage_warning": alt_status != "ok",
+                "dosage_check_message": alt_msg,
+                "high_risk": alt_risk,
+                "dose_range": list(HERB_DATABASE[alt]["dose_g"]),
+            }
         del h["source_span"]
 
     # Acupuncture correction runs on top of the herb-corrected text (not the
@@ -53,6 +69,9 @@ def process(transcript_text):
     corrected, acu_edits, acu_spans = correct_acupuncture_only(corrected)
     acupoints = extract_acupuncture(corrected, acu_edits)
     for a in acupoints:
+        alt = a.get("ambiguous_with")
+        if a.get("ambiguous") and alt in ACUPOINT_DATABASE:
+            a["alternative"] = {"name": alt, "code": ACUPOINT_DATABASE[alt]["code"], "meridian": ACUPOINT_DATABASE[alt]["meridian"]}
         del a["source_span"]
 
     # Comprehensive de-id pass over the FULL corrected transcript -- this is

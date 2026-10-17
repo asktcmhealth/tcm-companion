@@ -1,10 +1,11 @@
 import { buildDraftText } from '../src/exportDraft';
 import { translate } from '../src/i18n';
-import type { HerbEntry, AcupointEntry } from '../src/pipeline';
+import type { EffectiveHerb, EffectivePoint } from '../src/herbEdits';
 
-const herb = (over: Partial<HerbEntry>): HerbEntry => ({
+const herb = (over: Partial<EffectiveHerb>): EffectiveHerb => ({
   name: '柴胡', dosage: 10, unit: 'g', dbConfirmed: true, dosageWarning: false,
-  dosageCheckMessage: '', highRisk: false, ambiguous: false, ...over,
+  dosageCheckMessage: '', highRisk: false, ambiguous: false,
+  edited: false, confirmed: false, originalName: '柴胡', originalDosage: 10, ...over,
 });
 const t = (k: string, v?: Record<string, string | number>) => translate('en', k, v);
 
@@ -31,10 +32,15 @@ describe('buildDraftText', () => {
   });
 
   it('includes acupoints and never anything beyond herbs and points', () => {
-    const pt: AcupointEntry = { name: '合谷', code: 'LI4', meridian: 'LI', laterality: '双侧', dbConfirmed: true, ambiguous: true, ambiguousWith: '合古' };
+    const pt: EffectivePoint = { name: '合谷', code: 'LI4', meridian: 'LI', laterality: '双侧', dbConfirmed: true, ambiguous: true, ambiguousWith: '合古', edited: false, confirmed: false, originalName: '合谷' };
     const text = buildDraftText([], [pt], new Set(), t);
     expect(text).toContain('- 合谷 (双侧) LI4  [verify - could also be 合古]');
     expect(text).not.toMatch(/transcript/i);
+  });
+
+  it('says when the physician changed an entry', () => {
+    const text = buildDraftText([herb({ name: '甘草', edited: true, originalName: '白芍' })], [], new Set([0]), t);
+    expect(text).toContain('- 甘草 10g  [edited by physician]');
   });
 
   it('works in Chinese', () => {
