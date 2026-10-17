@@ -35,7 +35,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     elapsed: 'Elapsed {time}',
 
     result_prescription: 'Prescription draft',
-    result_prescription_desc: 'Requires physician review before sign-off.',
+    result_prescription_desc: 'Requires physician review before sign-off. The herb and acupoint lists and dose ranges are an unreviewed draft, so check every entry.',
     result_acupuncture: 'Acupuncture treatment',
     result_transcript: 'Transcript',
     show_transcript: 'Show transcript',
@@ -95,7 +95,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     elapsed: '已用时 {time}',
 
     result_prescription: '处方草案',
-    result_prescription_desc: '签署前须经医师核实。',
+    result_prescription_desc: '签署前须经医师核实。药材、穴位名录及剂量范围为未经审核的草稿，请逐项核对。',
     result_acupuncture: '针灸治疗',
     result_transcript: '文字记录',
     show_transcript: '显示文字记录',
