@@ -3,31 +3,17 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { t, getLang, setLang, stagePhrases } from "./i18n";
 import { buildDraftText } from "./exportDraft";
-
-// `ambiguous`/`ambiguous_with` are optional because a sidecar binary built
-// before the ambiguity check existed simply doesn't emit them -- treated as
-// "not flagged" rather than crashing on a missing field.
-interface HerbEntry {
-  name: string;
-  dosage: number;
-  unit: string;
-  db_confirmed: boolean;
-  dosage_warning: boolean;
-  dosage_check_message: string;
-  high_risk: boolean;
-  ambiguous?: boolean;
-  ambiguous_with?: string | null;
-}
-
-interface AcupointEntry {
-  name: string;
-  code: string;
-  meridian: string;
-  laterality: string | null;
-  db_confirmed: boolean;
-  ambiguous?: boolean;
-  ambiguous_with?: string | null;
-}
+import {
+  applyHerbEdit,
+  applyPointEdit,
+  parseDose,
+  type AcupointEntry,
+  type EffectiveHerb,
+  type EffectivePoint,
+  type HerbEdit,
+  type HerbEntry,
+  type PointEdit,
+} from "./edits";
 
 // Every string interpolated into innerHTML below goes through this. Most come
 // from the closed herb/acupoint databases, but the de-identification report
@@ -318,7 +304,37 @@ function countPart(key: string, n: number): string {
 // tell, so every dose is checked by a person; nothing is pre-ticked.
 const confirmedDoses = new Map<string, Set<number>>();
 
-function renderPrescription(herbs: HerbEntry[], sectionFound: boolean, confirmed: Set<number>): string {
+// The physician's corrections, per job (see edits.ts), and which dose box is
+// open for typing.
+const herbEdits = new Map<string, Record<number, HerbEdit>>();
+const pointEdits = new Map<string, Record<number, PointEdit>>();
+let editingDose: { jobId: string; index: number; invalid: boolean } | null = null;
+
+function effectiveHerbs(job: PatientJob): EffectiveHerb[] {
+  const edits = herbEdits.get(job.id) ?? {};
+  return (job.result?.prescription.herbs ?? []).map((h, i) => applyHerbEdit(h, edits[i]));
+}
+
+function effectivePoints(job: PatientJob): EffectivePoint[] {
+  const edits = pointEdits.get(job.id) ?? {};
+  return (job.result?.acupuncture.points ?? []).map((p, i) => applyPointEdit(p, edits[i]));
+}
+
+function actionButton(action: string, index: number, label: string): string {
+  return `<button type="button" class="entry-action" data-action="${action}" data-index="${index}">${esc(label)}</button>`;
+}
+
+function editedChip(edited: boolean, confirmed: boolean): string {
+  if (!edited && !confirmed) return "";
+  return `<span class="badge badge-edited">${t(edited ? "chip_edited" : "chip_confirmed")}</span>`;
+}
+
+function renderPrescription(
+  herbs: EffectiveHerb[],
+  sectionFound: boolean,
+  confirmed: Set<number>,
+  editing: { index: number; invalid: boolean } | null,
+): string {
   // An empty list has two very different meanings. If no "处方" trigger was
   // recognized nothing was even searched -- the physician must not read that as
   // "nothing was prescribed".
@@ -335,17 +351,41 @@ function renderPrescription(herbs: HerbEntry[], sectionFound: boolean, confirmed
   );
 
   const rows = herbs
-    .map((h) => {
+    .map((h, i) => {
       const badges: string[] = [];
       if (h.ambiguous) badges.push(`<span class="badge badge-verify">${t("badge_verify")}</span>`);
       if (h.high_risk) badges.push(`<span class="badge badge-high-risk">${t("badge_high_risk")}</span>`);
       if (h.dosage_warning) badges.push(`<span class="badge badge-out-of-range">${esc(h.dosage_check_message)}</span>`);
-      const i = herbs.indexOf(h);
+      badges.push(editedChip(h.edited, h.confirmed));
+
+      let actions = "";
+      if (editing?.index === i) {
+        actions = `<span class="entry-actions">
+          <input class="dose-input${editing.invalid ? " invalid" : ""}" data-dose-input="${i}" inputmode="decimal" value="${esc(h.dosage)}" aria-label="${esc(h.name)}: ${t("edit_dose")}" /> g
+          ${actionButton("save-dose", i, t("dose_save"))}${actionButton("cancel-dose", i, t("dose_cancel"))}
+          ${editing.invalid ? `<span class="entry-note" role="alert">${t("dose_invalid")}</span>` : ""}
+        </span>`;
+      } else {
+        const parts: string[] = [];
+        if (h.ambiguous) {
+          parts.push(actionButton("keep", i, t("keep_term").replace("{name}", h.name)));
+          if (h.alternative) parts.push(actionButton("use", i, t("use_term").replace("{name}", h.alternative.name)));
+        }
+        if (h.canEditDose) parts.push(actionButton("edit-dose", i, t("edit_dose")));
+        if (h.edited || h.confirmed) parts.push(actionButton("undo", i, t("undo_edit")));
+        if (parts.length) actions = `<span class="entry-actions">${parts.join("")}</span>`;
+      }
+
+      const editedNote = h.edited
+        ? `<span class="entry-note">${esc(t("edited_from").replace("{name}", h.originalName).replace("{dose}", String(h.originalDosage)))}</span>`
+        : "";
       return `<li class="entry-row${h.ambiguous ? " entry-row-verify" : ""}">
         <span class="entry-main">${esc(h.name)} <span class="entry-meta">${esc(h.dosage)}${esc(h.unit)}</span></span>
         <span class="entry-badges">${badges.join("")}</span>
         <label class="dose-confirm"><input type="checkbox" data-dose-index="${i}"${confirmed.has(i) ? " checked" : ""} /> ${t("dose_confirm")}</label>
         ${h.ambiguous ? `<span class="entry-note">${verifyNote(h.ambiguous_with)}</span>` : ""}
+        ${editedNote}
+        ${actions}
       </li>`;
     })
     .join("");
@@ -353,7 +393,7 @@ function renderPrescription(herbs: HerbEntry[], sectionFound: boolean, confirmed
   return `${banner}<p class="dose-progress" role="status">${progress}</p><ul class="entry-list">${rows}</ul>`;
 }
 
-function renderAcupuncture(points: AcupointEntry[]): string {
+function renderAcupuncture(points: EffectivePoint[]): string {
   if (points.length === 0) return `<span class="empty-state">${t("empty_no_acupoints")}</span>`;
 
   const banner = reviewBanner(
@@ -361,17 +401,93 @@ function renderAcupuncture(points: AcupointEntry[]): string {
   );
 
   const rows = points
-    .map((p) => {
+    .map((p, i) => {
       const lat = p.laterality ? ` (${esc(p.laterality)})` : "";
+      const parts: string[] = [];
+      if (p.ambiguous) {
+        parts.push(actionButton("keep", i, t("keep_term").replace("{name}", p.name)));
+        if (p.alternative) parts.push(actionButton("use", i, t("use_term").replace("{name}", p.alternative.name)));
+      }
+      if (p.edited || p.confirmed) parts.push(actionButton("undo", i, t("undo_edit")));
       return `<li class="entry-row${p.ambiguous ? " entry-row-verify" : ""}">
         <span class="entry-main">${esc(p.name)}${lat}</span>
-        <span class="entry-badges">${p.ambiguous ? `<span class="badge badge-verify">${t("badge_verify")}</span>` : ""}</span>
+        <span class="entry-badges">${p.ambiguous ? `<span class="badge badge-verify">${t("badge_verify")}</span>` : ""}${editedChip(p.edited, p.confirmed)}</span>
         <span class="entry-meta">${esc(p.code)} · ${esc(p.meridian)}</span>
         ${p.ambiguous ? `<span class="entry-note">${verifyNote(p.ambiguous_with)}</span>` : ""}
+        ${parts.length ? `<span class="entry-actions">${parts.join("")}</span>` : ""}
       </li>`;
     })
     .join("");
   return `${banner}<ul class="entry-list">${rows}</ul>`;
+}
+
+// A changed herb or dose is a new thing to check against the recording, so its
+// "dose checked" tick is cleared.
+function untick(jobId: string, index: number) {
+  confirmedDoses.get(jobId)?.delete(index);
+}
+
+function setHerbEdit(jobId: string, index: number, edit: HerbEdit | null, resetTick: boolean) {
+  const all = { ...(herbEdits.get(jobId) ?? {}) };
+  if (edit === null) delete all[index];
+  else all[index] = { ...all[index], ...edit };
+  herbEdits.set(jobId, all);
+  if (resetTick) untick(jobId, index);
+}
+
+function setPointEdit(jobId: string, index: number, edit: PointEdit | null) {
+  const all = { ...(pointEdits.get(jobId) ?? {}) };
+  if (edit === null) delete all[index];
+  else all[index] = { ...all[index], ...edit };
+  pointEdits.set(jobId, all);
+}
+
+function handlePrescriptionClick(jobId: string, event: Event) {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]");
+  if (!button) return;
+  const index = Number(button.dataset.index);
+  switch (button.dataset.action) {
+    case "keep":
+      setHerbEdit(jobId, index, { resolved: true }, false);
+      break;
+    case "use":
+      setHerbEdit(jobId, index, { swap: true }, true);
+      break;
+    case "undo":
+      setHerbEdit(jobId, index, null, true);
+      break;
+    case "edit-dose":
+      editingDose = { jobId, index, invalid: false };
+      break;
+    case "cancel-dose":
+      editingDose = null;
+      break;
+    case "save-dose": {
+      const input = document.querySelector<HTMLInputElement>(`input[data-dose-input="${index}"]`);
+      const grams = parseDose(input?.value ?? "");
+      if (grams === null) {
+        editingDose = { jobId, index, invalid: true };
+      } else {
+        setHerbEdit(jobId, index, { dosage: grams }, true);
+        editingDose = null;
+      }
+      break;
+    }
+    default:
+      return;
+  }
+  renderSelectedJob();
+}
+
+function handleAcupunctureClick(jobId: string, event: Event) {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]");
+  if (!button) return;
+  const index = Number(button.dataset.index);
+  if (button.dataset.action === "keep") setPointEdit(jobId, index, { resolved: true });
+  else if (button.dataset.action === "use") setPointEdit(jobId, index, { swap: true });
+  else if (button.dataset.action === "undo") setPointEdit(jobId, index, null);
+  else return;
+  renderSelectedJob();
 }
 
 function renderDeid(report: DeidRedaction[]): string {
@@ -439,10 +555,12 @@ function renderSelectedJob() {
   const result = job.result;
   noteEl.textContent = result.consultation_note || t("empty_note");
   if (!confirmedDoses.has(job.id)) confirmedDoses.set(job.id, new Set());
+  const editing = editingDose && editingDose.jobId === job.id ? editingDose : null;
   prescriptionEl.innerHTML = renderPrescription(
-    result.prescription.herbs,
+    effectiveHerbs(job),
     result.prescription_spans_found > 0,
     confirmedDoses.get(job.id)!,
+    editing,
   );
   prescriptionEl.onchange = (event) => {
     const box = event.target as HTMLInputElement;
@@ -453,7 +571,32 @@ function renderSelectedJob() {
     else set.delete(index);
     renderSelectedJob();
   };
-  acupunctureEl.innerHTML = renderAcupuncture(result.acupuncture.points);
+  prescriptionEl.onclick = (event) => handlePrescriptionClick(job.id, event);
+  prescriptionEl.onkeydown = (event) => {
+    const input = event.target as HTMLInputElement;
+    if (!input.matches?.("input[data-dose-input]")) return;
+    const index = Number(input.dataset.doseInput);
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const grams = parseDose(input.value);
+      if (grams === null) editingDose = { jobId: job.id, index, invalid: true };
+      else {
+        setHerbEdit(job.id, index, { dosage: grams }, true);
+        editingDose = null;
+      }
+      renderSelectedJob();
+    } else if (event.key === "Escape") {
+      editingDose = null;
+      renderSelectedJob();
+    }
+  };
+  if (editing) {
+    const box = prescriptionEl.querySelector<HTMLInputElement>("input[data-dose-input]");
+    box?.focus();
+    box?.select();
+  }
+  acupunctureEl.innerHTML = renderAcupuncture(effectivePoints(job));
+  acupunctureEl.onclick = (event) => handleAcupunctureClick(job.id, event);
   deidEl.innerHTML = renderDeid(result.deid_report);
   rawEl.textContent = JSON.stringify(result, null, 2);
 }
@@ -708,12 +851,7 @@ async function copyDraft() {
   const job = jobs.find((j) => j.id === selectedJobId);
   const status = document.querySelector<HTMLElement>("#copy-status");
   if (!job?.result || !status) return;
-  const text = buildDraftText(
-    job.result.prescription.herbs,
-    job.result.acupuncture.points,
-    confirmedDoses.get(job.id) ?? new Set(),
-    t,
-  );
+  const text = buildDraftText(effectiveHerbs(job), effectivePoints(job), confirmedDoses.get(job.id) ?? new Set(), t);
   try {
     await navigator.clipboard.writeText(text);
     status.textContent = t("copy_done");

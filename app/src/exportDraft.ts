@@ -12,6 +12,7 @@ interface Herb {
   high_risk: boolean;
   ambiguous?: boolean;
   ambiguous_with?: string | null;
+  edited?: boolean;
 }
 
 interface Point {
@@ -20,6 +21,7 @@ interface Point {
   laterality: string | null;
   ambiguous?: boolean;
   ambiguous_with?: string | null;
+  edited?: boolean;
 }
 
 type T = (key: string) => string;
@@ -35,6 +37,7 @@ export function buildDraftText(herbs: Herb[], points: Point[], confirmed: Readon
       if (h.ambiguous) marks.push(verify(h.ambiguous_with));
       if (h.dosage_warning) marks.push(h.dosage_check_message);
       if (h.high_risk) marks.push(t("badge_high_risk"));
+      if (h.edited) marks.push(t("export_edited"));
       if (!confirmed.has(i)) marks.push(t("export_unchecked"));
       lines.push(`- ${h.name} ${h.dosage}${h.unit}${marks.length ? `  [${marks.join("; ")}]` : ""}`);
     });
@@ -45,7 +48,10 @@ export function buildDraftText(herbs: Herb[], points: Point[], confirmed: Readon
     lines.push(t("results_acupuncture_title"));
     for (const p of points) {
       const lat = p.laterality ? ` (${p.laterality})` : "";
-      lines.push(`- ${p.name}${lat} ${p.code}${p.ambiguous ? `  [${verify(p.ambiguous_with)}]` : ""}`);
+      const notes: string[] = [];
+      if (p.ambiguous) notes.push(verify(p.ambiguous_with));
+      if (p.edited) notes.push(t("export_edited"));
+      lines.push(`- ${p.name}${lat} ${p.code}${notes.length ? `  [${notes.join("; ")}]` : ""}`);
     }
     lines.push("");
   }
