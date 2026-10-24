@@ -627,7 +627,8 @@ function Screen(): React.JSX.Element {
 function makeStyles(c: Theme) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    scroll: { padding: 20, paddingBottom: 48 },
+    // Centered column no wider than a large phone, so tablets don't stretch cards across the whole screen.
+    scroll: { padding: 20, paddingBottom: 48, width: '100%', maxWidth: 640, alignSelf: 'center' },
     langToggle: {
       alignSelf: 'flex-end',
       backgroundColor: c.card,
