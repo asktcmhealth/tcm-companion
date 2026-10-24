@@ -34,6 +34,7 @@ jest.mock('react-native-fs', () => ({
     writeFile: jest.fn(),
     appendFile: jest.fn(),
     read: jest.fn(),
+    readFile: jest.fn(),
   },
 }));
 
@@ -121,6 +122,66 @@ describe('model present', () => {
     await press(tree, '中文');
     expect(screenText(tree)).toContain('录音');
     expect(screenText(tree)).toContain('完全离线运行');
+  });
+});
+
+describe('saved draft', () => {
+  const herb = {
+    name: '柴胡', dosage: 10, unit: 'g', dbConfirmed: true, dosageWarning: false,
+    dosageCheckMessage: '', highRisk: false, ambiguous: false,
+  };
+  const saved = (over: Record<string, unknown> = {}) =>
+    JSON.stringify({
+      version: 1, savedAt: new Date().toISOString(), herbs: [herb], points: [],
+      prescriptionSectionFound: true, confirmed: [0], herbEdits: {}, pointEdits: {}, review: null, ...over,
+    });
+  afterEach(() => RNFS.readFile.mockReset());
+
+  it('restores ticks and corrections after a restart, and has no transcript to show', async () => {
+    modelIsPresent();
+    RNFS.readFile.mockImplementation(async (path: string) => (path.endsWith('draft.json') ? saved() : '{}'));
+    const tree = await launch();
+    const text = screenText(tree);
+    expect(text).toContain('柴胡');
+    expect(text).toContain('Restored your draft');
+    expect(text).toContain('1 of 1');
+    expect(text).not.toContain('Show transcript');
+  });
+
+  it('does not restore a draft that is older than the retention window', async () => {
+    modelIsPresent();
+    const old = new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString();
+    RNFS.readFile.mockImplementation(async (path: string) => (path.endsWith('draft.json') ? saved({ savedAt: old }) : '{}'));
+    const tree = await launch();
+    expect(screenText(tree)).not.toContain('Restored your draft');
+    expect(RNFS.unlink).toHaveBeenCalledWith(expect.stringContaining('draft.json'));
+  });
+
+  it('saves the work after a change, without the transcript', async () => {
+    modelIsPresent();
+    const tree = await launch();
+    await press(tree, 'Run pipeline on sample text');
+    const box = tree.root.findAll(n => n.props.accessibilityRole === 'checkbox' && typeof n.props.onPress === 'function')[0];
+    await act(async () => box.props.onPress());
+    await act(async () => {
+      await new Promise(r => setTimeout(r, 600));
+    });
+    const call = RNFS.writeFile.mock.calls.filter((c: string[]) => c[0].endsWith('draft.json')).at(-1);
+    expect(call).toBeDefined();
+    const stored = JSON.parse(call[1]);
+    expect(stored.confirmed).toEqual([0]);
+    expect(stored.herbs.length).toBeGreaterThan(10);
+    expect(call[1]).not.toContain('今天来的病人');
+  });
+
+  it('Clear draft deletes the saved file and the results', async () => {
+    modelIsPresent();
+    const tree = await launch();
+    await press(tree, 'Run pipeline on sample text');
+    expect(screenText(tree)).toContain('Prescription draft');
+    await press(tree, 'Clear draft');
+    expect(RNFS.unlink).toHaveBeenCalledWith(expect.stringContaining('draft.json'));
+    expect(screenText(tree)).not.toContain('Doses checked against the recording');
   });
 });
 

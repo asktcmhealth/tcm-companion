@@ -43,6 +43,7 @@ import { runPipeline, type PipelineOutput } from './src/runPipeline';
 import { defaultLang, translate, type Lang } from './src/i18n';
 import { useTheme, type Theme } from './src/theme';
 import { HerbList, PointList, ReviewPanel } from './src/Results';
+import { clearDraft, loadDraft, saveDraft } from './src/draftStore';
 import { RecordButton } from './src/RecordButton';
 import { buildDraftText } from './src/exportDraft';
 import { applyHerbEdit, applyPointEdit, type HerbEdit, type PointEdit } from './src/herbEdits';
@@ -153,17 +154,61 @@ function Screen(): React.JSX.Element {
   const [herbEdits, setHerbEdits] = useState<Record<number, HerbEdit>>({});
   const [pointEdits, setPointEdits] = useState<Record<number, PointEdit>>({});
   const [reviewRecord, setReviewRecord] = useState<ReviewRecord | null>(null);
+  // Set when a saved draft is being restored, so the "new result -> start clean"
+  // reset below leaves the restored ticks and corrections alone, once.
+  const restoredRef = useRef<PipelineOutput | null>(null);
+  const [restoredFrom, setRestoredFrom] = useState<string | null>(null);
   useEffect(() => {
+    if (output && restoredRef.current === output) {
+      restoredRef.current = null;
+      return;
+    }
     setConfirmedDoses(new Set());
     setHerbEdits({});
     setPointEdits({});
     setReviewRecord(null);
+    setRestoredFrom(null);
   }, [output]);
+  const restoreDraft = useCallback(async () => {
+    const days = await loadRetentionDays();
+    const draft = await loadDraft(days);
+    if (!draft) return;
+    const restored: PipelineOutput = {
+      transcript: '',
+      herbs: draft.herbs,
+      points: draft.points,
+      prescriptionSectionFound: draft.prescriptionSectionFound,
+    };
+    restoredRef.current = restored;
+    setOutput(restored);
+    setConfirmedDoses(new Set(draft.confirmed));
+    setHerbEdits(draft.herbEdits);
+    setPointEdits(draft.pointEdits);
+    setReviewRecord(draft.review);
+    setRestoredFrom(new Date(draft.savedAt).toLocaleString());
+  }, []);
   const herbs = useMemo(() => (output?.herbs ?? []).map((h, i) => applyHerbEdit(h, herbEdits[i])), [output, herbEdits]);
   const points = useMemo(() => (output?.points ?? []).map((p, i) => applyPointEdit(p, pointEdits[i])), [output, pointEdits]);
   const status = useMemo(() => reviewStatus(herbs, points, confirmedDoses), [herbs, points, confirmedDoses]);
   const signature = useMemo(() => reviewSignature(herbs, points, confirmedDoses), [herbs, points, confirmedDoses]);
   const review = activeReview(reviewRecord, status, signature);
+  // Keep the work in progress on the device (see src/draftStore.ts): herbs,
+  // doses, ticks, corrections and the review stamp -- never the transcript or audio.
+  useEffect(() => {
+    if (!output) return;
+    const timer = setTimeout(() => {
+      void saveDraft({
+        herbs: output.herbs,
+        points: output.points,
+        prescriptionSectionFound: output.prescriptionSectionFound,
+        confirmed: [...confirmedDoses],
+        herbEdits,
+        pointEdits,
+        review: reviewRecord,
+      }).catch(() => {});
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [output, confirmedDoses, herbEdits, pointEdits, reviewRecord]);
   const markReviewed = useCallback(() => setReviewRecord({ signature, time: clockTime() }), [signature]);
   const untickDose = useCallback((index: number) => {
     // A changed herb or dose is a new thing to check against the recording.
@@ -207,6 +252,7 @@ function Screen(): React.JSX.Element {
     setRetentionDays(next);
     void saveRetentionDays(next).catch(() => {});
     void purgeOldRecordings(next);
+    void loadDraft(next); // also removes a saved draft that is now past the window
   }, [retentionDays]);
   const toggleDose = useCallback((index: number) => {
     setConfirmedDoses(prev => {
@@ -351,7 +397,10 @@ function Screen(): React.JSX.Element {
 
   useEffect(() => {
     void readAutoTestPlan().then(plan => {
-      if (!plan) return prepare();
+      if (!plan) {
+        void restoreDraft().catch(() => {});
+        return prepare();
+      }
       if (isTranscriptPlan(plan)) {
         // UI-check mode: no speech model, just the results screen for a known transcript.
         setStage('ready');
@@ -369,7 +418,7 @@ function Screen(): React.JSX.Element {
       void whisperContextRef.current?.release();
       whisperContextRef.current = null;
     };
-  }, [prepare, runAutoTest]);
+  }, [prepare, runAutoTest, restoreDraft]);
 
   // The 539MB download is the user's decision (data plan, storage), never
   // something to start silently at launch.
@@ -577,6 +626,11 @@ function Screen(): React.JSX.Element {
 
         {output && stage !== 'transcribing' && (
           <>
+            {restoredFrom && (
+              <Text accessibilityRole="alert" style={styles.restoredNote}>
+                {t('draft_restored', { when: restoredFrom })}
+              </Text>
+            )}
             <View style={styles.section}>
               <Text style={styles.sectionTitle} accessibilityRole="header">
                 {t('result_prescription')}
@@ -634,13 +688,26 @@ function Screen(): React.JSX.Element {
 
             <Pressable
               accessibilityRole="button"
+              onPress={() => {
+                void clearDraft();
+                setRestoredFrom(null);
+                setOutput(null);
+              }}
+              style={styles.linkButton}>
+              <Text style={styles.linkButtonText}>{t('clear_draft')}</Text>
+            </Pressable>
+
+            {output.transcript !== '' && (
+            <Pressable
+              accessibilityRole="button"
               onPress={() => setShowTranscript(s => !s)}
               style={styles.linkButton}>
               <Text style={styles.linkButtonText}>
                 {showTranscript ? t('hide_transcript') : t('show_transcript')}
               </Text>
             </Pressable>
-            {showTranscript && (
+            )}
+            {showTranscript && output.transcript !== '' && (
               <View style={styles.transcriptBox}>
                 <Text style={styles.transcriptLabel}>{t('result_transcript')}</Text>
                 <Text selectable style={styles.transcriptText}>
@@ -660,6 +727,7 @@ function makeStyles(c: Theme) {
     container: { flex: 1, backgroundColor: c.bg },
     // Centered column no wider than a large phone, so tablets don't stretch cards across the whole screen.
     scroll: { padding: 20, paddingBottom: 48, width: '100%', maxWidth: 640, alignSelf: 'center' },
+    restoredNote: { color: c.inkMuted, fontSize: 13, marginBottom: 12 },
     langToggle: {
       alignSelf: 'flex-end',
       backgroundColor: c.card,
