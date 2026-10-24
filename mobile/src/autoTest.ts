@@ -28,11 +28,26 @@ export interface AutoTestPlan {
   variants: AutoTestVariant[];
 }
 
-export async function readAutoTestPlan(): Promise<AutoTestPlan | null> {
+/** UI-check mode: skip speech entirely, run the pipeline on this text and show the result screen. */
+export interface AutoTestTranscriptPlan {
+  transcript: string;
+  /** Scroll the page to this offset once the result is drawn, so CI can screenshot lower sections. */
+  scrollY: number;
+}
+
+export type AnyAutoTestPlan = AutoTestPlan | AutoTestTranscriptPlan;
+
+export const isTranscriptPlan = (plan: AnyAutoTestPlan): plan is AutoTestTranscriptPlan => 'transcript' in plan;
+
+export async function readAutoTestPlan(): Promise<AnyAutoTestPlan | null> {
   try {
     const planPath = `${dir()}/plan.json`;
     if (!(await RNFS.exists(planPath))) return null;
     const plan = JSON.parse(await RNFS.readFile(planPath, 'utf8'));
+    if (typeof plan?.transcript === 'string' && plan.transcript.length > 0) {
+      const scrollY = Number(plan.scrollY);
+      return { transcript: plan.transcript, scrollY: Number.isFinite(scrollY) && scrollY > 0 ? scrollY : 0 };
+    }
     if (typeof plan?.audio !== 'string' || plan.audio.includes('/')) return null;
     const variants: AutoTestVariant[] = Array.isArray(plan.variants)
       ? plan.variants

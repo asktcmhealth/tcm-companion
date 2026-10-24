@@ -47,7 +47,14 @@ import { RecordButton } from './src/RecordButton';
 import { buildDraftText } from './src/exportDraft';
 import { applyHerbEdit, applyPointEdit, type HerbEdit, type PointEdit } from './src/herbEdits';
 import { DEFAULT_RETENTION_DAYS, RETENTION_OPTIONS, loadRetentionDays, purgeOldRecordings, saveRetentionDays } from './src/retention';
-import { logAutoTest, readAutoTestPlan, writeAutoTestResult, type AutoTestPlan } from './src/autoTest';
+import {
+  isTranscriptPlan,
+  logAutoTest,
+  readAutoTestPlan,
+  writeAutoTestResult,
+  type AnyAutoTestPlan,
+  type AutoTestPlan,
+} from './src/autoTest';
 
 type Stage =
   | 'checking'
@@ -205,6 +212,7 @@ function Screen(): React.JSX.Element {
   const [showTranscript, setShowTranscript] = useState(false);
   const [level, setLevel] = useState(0);
 
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const whisperContextRef = useRef<WhisperContext | null>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
 
@@ -335,7 +343,21 @@ function Screen(): React.JSX.Element {
   );
 
   useEffect(() => {
-    void readAutoTestPlan().then(plan => (plan ? runAutoTest(plan) : prepare()));
+    void readAutoTestPlan().then(plan => {
+      if (!plan) return prepare();
+      if (isTranscriptPlan(plan)) {
+        // UI-check mode: no speech model, just the results screen for a known transcript.
+        setStage('ready');
+        setOutput(runPipeline(plan.transcript));
+        setTimeout(async () => {
+          scrollRef.current?.scrollTo({ y: plan.scrollY, animated: false });
+          await new Promise<void>(resolve => setTimeout(resolve, 1200));
+          await writeAutoTestResult({ uiCheck: true, scrollY: plan.scrollY });
+        }, 1500);
+        return;
+      }
+      return runAutoTest(plan);
+    });
     return () => {
       void whisperContextRef.current?.release();
       whisperContextRef.current = null;
@@ -428,7 +450,7 @@ function Screen(): React.JSX.Element {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={theme.bg === '#1c1e1a' ? 'light-content' : 'dark-content'} />
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Switch language"

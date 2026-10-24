@@ -37,10 +37,20 @@ describe('readAutoTestPlan', () => {
     fs.readFile.mockResolvedValue(
       JSON.stringify({ audio: 'a.wav', variants: [{ label: 'x' }, { label: 'y', prompt: 'p' }, { nolabel: 1 }, 5] }),
     );
-    expect((await readAutoTestPlan())?.variants).toEqual([
+    expect(((await readAutoTestPlan()) as { variants: unknown[] }).variants).toEqual([
       { label: 'x', prompt: undefined },
       { label: 'y', prompt: 'p' },
     ]);
+  });
+
+  it('reads a transcript-only UI-check plan and sanitises the scroll offset', async () => {
+    fs.exists.mockResolvedValue(true);
+    fs.readFile.mockResolvedValue(JSON.stringify({ transcript: '处方：柴胡10克', scrollY: 900 }));
+    expect(await readAutoTestPlan()).toEqual({ transcript: '处方：柴胡10克', scrollY: 900 });
+    fs.readFile.mockResolvedValue(JSON.stringify({ transcript: 'x', scrollY: 'abc' }));
+    expect(await readAutoTestPlan()).toEqual({ transcript: 'x', scrollY: 0 });
+    fs.readFile.mockResolvedValue(JSON.stringify({ transcript: '' }));
+    expect(await readAutoTestPlan()).toBeNull();
   });
 
   it('rejects a plan that points outside the folder', async () => {

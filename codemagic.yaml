@@ -130,6 +130,62 @@ workflows:
       - screenshots/*
       - mobile/screenshots/*
 
+  # Look at the real results screen on an iPhone simulator, without any audio or
+  # speech model: the app is started with a ready-made transcript
+  # (mobile/e2e/transcript.txt, a read-aloud of the public simulation script)
+  # and CI screenshots it at several scroll positions, light and dark.
+  ios-simulator-ui-check:
+    name: iOS Simulator UI check (results screen)
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    working_directory: mobile
+    environment:
+      node: lts
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install npm dependencies
+        script: npm install
+      - name: Install CocoaPods dependencies
+        script: cd ios && pod install
+      - name: Build Release for iOS Simulator
+        script: |
+          xcodebuild build -workspace ios/TCMScribeMobile.xcworkspace -scheme TCMScribeMobile -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/sim CODE_SIGNING_ALLOWED=NO
+      - name: Show the results screen at several scroll positions
+        script: |
+          APP=$(find build/sim -name "TCMScribeMobile.app" -path "*Release-iphonesimulator*" | head -1)
+          DEVICE=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE '[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}' | head -1)
+          xcrun simctl boot "$DEVICE"
+          xcrun simctl bootstatus "$DEVICE" -b
+          xcrun simctl install "$DEVICE" "$APP"
+          DATA=$(xcrun simctl get_app_container "$DEVICE" com.tcmscribemobile data)
+          mkdir -p "$DATA/Documents/autotest" screenshots
+          shoot () {
+            # $1 = scroll offset, $2 = output name
+            xcrun simctl terminate "$DEVICE" com.tcmscribemobile || true
+            rm -f "$DATA/Documents/autotest/result.json"
+            node -e "const fs=require('fs');fs.writeFileSync(process.argv[2],JSON.stringify({transcript:fs.readFileSync('e2e/transcript.txt','utf8'),scrollY:Number(process.argv[1])}))" "$1" "$DATA/Documents/autotest/plan.json"
+            xcrun simctl launch "$DEVICE" com.tcmscribemobile
+            for n in $(seq 1 30); do
+              [ -f "$DATA/Documents/autotest/result.json" ] && break
+              sleep 1
+            done
+            sleep 1
+            xcrun simctl io "$DEVICE" screenshot "screenshots/$2.png"
+          }
+          xcrun simctl ui "$DEVICE" appearance light
+          shoot 0 01-top-light
+          shoot 700 02-herbs-light
+          shoot 1500 03-herbs-lower-light
+          shoot 2600 04-more-light
+          shoot 4200 05-bottom-light
+          xcrun simctl ui "$DEVICE" appearance dark
+          shoot 700 06-herbs-dark
+          xcrun simctl spawn "$DEVICE" log show --last 10m --predicate 'process == "TCMScribeMobile"' --style compact | tail -40 > screenshots/app-log.txt || true
+    artifacts:
+      - screenshots/*
+      - mobile/screenshots/*
+
   # Real-device / TestFlight build. Needs an Apple Developer account ($99/yr,
   # enrolled by the account owner -- see project notes) and an
   # app_store_connect integration configured in the Codemagic dashboard
