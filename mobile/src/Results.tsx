@@ -149,6 +149,7 @@ export function HerbList({
       <Text accessibilityRole="text" style={[styles.progress, { color: theme.inkMuted }]}>
         {t('dose_progress', { n: confirmed.size, total: herbs.length })}
       </Text>
+      <Text style={[styles.note, { color: theme.inkMuted, marginTop: 0, marginBottom: 8 }]}>{t('dose_hint')}</Text>
       {herbs.map((h, i) => (
         <View
           key={`${h.name}-${i}`}
@@ -158,9 +159,25 @@ export function HerbList({
             h.ambiguous && { borderLeftWidth: 3, borderLeftColor: theme.verifyInk },
           ]}>
           <View style={styles.rowTop}>
-            <Text style={[styles.name, { color: theme.ink }]}>
-              {h.name} <Text style={[styles.meta, { color: theme.inkMuted }]}>{h.dosage}{h.unit}</Text>
-            </Text>
+            <Pressable
+              onPress={() => onToggleDose(i)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: confirmed.has(i) }}
+              accessibilityLabel={`${h.name} ${h.dosage} ${h.unit}: ${t('dose_confirm')}`}
+              hitSlop={8}
+              style={styles.tickAndName}>
+              <View
+                style={[
+                  styles.box,
+                  { borderColor: theme.inkMuted },
+                  confirmed.has(i) && { backgroundColor: theme.verifyInk, borderColor: theme.verifyInk },
+                ]}>
+                {confirmed.has(i) && <Text style={styles.tick}>✓</Text>}
+              </View>
+              <Text style={[styles.name, { color: theme.ink }]}>
+                {h.name} <Text style={[styles.meta, { color: theme.inkMuted }]}>{h.dosage}{h.unit}</Text>
+              </Text>
+            </Pressable>
             <View style={styles.chips}>
               {h.ambiguous && (
                 <Chip label={t('badge_verify')} bg={theme.verifyBg} ink={theme.verifyInk} border={theme.verifyBorder} />
@@ -174,6 +191,14 @@ export function HerbList({
                   bg={theme.cardSunken}
                   ink={theme.ink}
                   border={theme.border}
+                />
+              )}
+              {editing !== i && (
+                <LinkButton
+                  label={t('edit_dose')}
+                  onPress={() => startEdit(i, h.dosage)}
+                  theme={theme}
+                  accessibilityLabel={`${h.name} ${t('edit_dose')}`}
                 />
               )}
             </View>
@@ -232,33 +257,6 @@ export function HerbList({
               {t('dose_invalid')}
             </Text>
           )}
-          <View style={styles.confirmLine}>
-            <Pressable
-              onPress={() => onToggleDose(i)}
-              accessibilityRole="checkbox"
-              accessibilityState={{ checked: confirmed.has(i) }}
-              accessibilityLabel={`${h.name} ${h.dosage} ${h.unit}: ${t('dose_confirm')}`}
-              hitSlop={8}
-              style={styles.confirmRow}>
-              <View
-                style={[
-                  styles.box,
-                  { borderColor: theme.inkMuted },
-                  confirmed.has(i) && { backgroundColor: theme.verifyInk, borderColor: theme.verifyInk },
-                ]}>
-                {confirmed.has(i) && <Text style={styles.tick}>✓</Text>}
-              </View>
-              <Text style={[styles.confirmLabel, { color: theme.inkMuted }]}>{t('dose_confirm')}</Text>
-            </Pressable>
-            {editing !== i && (
-              <LinkButton
-                label={t('edit_dose')}
-                onPress={() => startEdit(i, h.dosage)}
-                theme={theme}
-                accessibilityLabel={`${h.name} ${t('edit_dose')}`}
-              />
-            )}
-          </View>
         </View>
       ))}
     </View>
@@ -346,7 +344,7 @@ export function PointList({
 const styles = StyleSheet.create({
   banner: { borderWidth: 1, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 },
   bold: { fontWeight: '700' },
-  row: { borderWidth: 1, borderRadius: 8, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 8 },
+  row: { borderWidth: 1, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 6 },
   rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 },
   name: { fontSize: 16, fontWeight: '600', flexShrink: 1 },
   meta: { fontSize: 14, fontWeight: '400' },
@@ -370,6 +368,7 @@ const styles = StyleSheet.create({
   reviewButtonText: { fontSize: 16, fontWeight: '700' },
   reviewDone: { fontSize: 16, fontWeight: '700' },
   progress: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  tickAndName: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1, minHeight: 32 },
   confirmLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 },
   box: { width: 22, height: 22, borderWidth: 2, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
