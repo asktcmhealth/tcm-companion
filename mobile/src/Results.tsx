@@ -168,46 +168,52 @@ export function HerbList({
               <LinkButton label={t('dose_cancel')} onPress={() => setEditing(null)} theme={theme} />
             </View>
           ) : (
-            <View style={styles.actionRow}>
-              {h.ambiguous && (
-                <>
-                  <LinkButton label={t('keep_term', { name: h.name })} onPress={() => onKeep(i)} theme={theme} />
-                  {h.ambiguousWith && (
-                    <LinkButton label={t('use_term', { name: h.ambiguousWith })} onPress={() => onSwap(i)} theme={theme} />
-                  )}
-                </>
-              )}
-              <LinkButton
-                label={t('edit_dose')}
-                onPress={() => startEdit(i, h.dosage)}
-                theme={theme}
-                accessibilityLabel={`${h.name} ${t('edit_dose')}`}
-              />
-              {(h.edited || h.confirmed) && <LinkButton label={t('undo_edit')} onPress={() => onUndo(i)} theme={theme} />}
-            </View>
+            (h.ambiguous || h.edited || h.confirmed) && (
+              <View style={styles.actionRow}>
+                {h.ambiguous && (
+                  <>
+                    <LinkButton label={t('keep_term', { name: h.name })} onPress={() => onKeep(i)} theme={theme} />
+                    {h.ambiguousWith && (
+                      <LinkButton label={t('use_term', { name: h.ambiguousWith })} onPress={() => onSwap(i)} theme={theme} />
+                    )}
+                  </>
+                )}
+                {(h.edited || h.confirmed) && <LinkButton label={t('undo_edit')} onPress={() => onUndo(i)} theme={theme} />}
+              </View>
+            )
           )}
           {editing === i && invalid && (
             <Text accessibilityRole="alert" style={[styles.note, { color: theme.danger }]}>
               {t('dose_invalid')}
             </Text>
           )}
-          <Pressable
-            onPress={() => onToggleDose(i)}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: confirmed.has(i) }}
-            accessibilityLabel={`${h.name} ${h.dosage} ${h.unit}: ${t('dose_confirm')}`}
-            hitSlop={8}
-            style={styles.confirmRow}>
-            <View
-              style={[
-                styles.box,
-                { borderColor: theme.inkMuted },
-                confirmed.has(i) && { backgroundColor: theme.verifyInk, borderColor: theme.verifyInk },
-              ]}>
-              {confirmed.has(i) && <Text style={styles.tick}>✓</Text>}
-            </View>
-            <Text style={[styles.confirmLabel, { color: theme.inkMuted }]}>{t('dose_confirm')}</Text>
-          </Pressable>
+          <View style={styles.confirmLine}>
+            <Pressable
+              onPress={() => onToggleDose(i)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: confirmed.has(i) }}
+              accessibilityLabel={`${h.name} ${h.dosage} ${h.unit}: ${t('dose_confirm')}`}
+              hitSlop={8}
+              style={styles.confirmRow}>
+              <View
+                style={[
+                  styles.box,
+                  { borderColor: theme.inkMuted },
+                  confirmed.has(i) && { backgroundColor: theme.verifyInk, borderColor: theme.verifyInk },
+                ]}>
+                {confirmed.has(i) && <Text style={styles.tick}>✓</Text>}
+              </View>
+              <Text style={[styles.confirmLabel, { color: theme.inkMuted }]}>{t('dose_confirm')}</Text>
+            </Pressable>
+            {editing !== i && (
+              <LinkButton
+                label={t('edit_dose')}
+                onPress={() => startEdit(i, h.dosage)}
+                theme={theme}
+                accessibilityLabel={`${h.name} ${t('edit_dose')}`}
+              />
+            )}
+          </View>
         </View>
       ))}
     </View>
@@ -315,7 +321,8 @@ const styles = StyleSheet.create({
   actionText: { fontSize: 13, fontWeight: '600' },
   input: { borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, minWidth: 64, fontSize: 15 },
   progress: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, minHeight: 32 },
+  confirmLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
+  confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 },
   box: { width: 22, height: 22, borderWidth: 2, borderRadius: 5, alignItems: 'center', justifyContent: 'center' },
   tick: { color: '#fff', fontSize: 14, fontWeight: '800', lineHeight: 16 },
   confirmLabel: { fontSize: 13 },

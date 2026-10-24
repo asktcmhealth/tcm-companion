@@ -99,7 +99,7 @@ export function RecordButton({
 const SIZE = 84;
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', marginVertical: 8 },
-  stage: { width: SIZE * 1.6, height: SIZE * 1.6, alignItems: 'center', justifyContent: 'center' },
+  stage: { width: SIZE * 1.4, height: SIZE * 1.4, alignItems: 'center', justifyContent: 'center' },
   button: { width: SIZE, height: SIZE, borderRadius: SIZE / 2, alignItems: 'center', justifyContent: 'center' },
   pulse: { position: 'absolute', width: SIZE, height: SIZE, borderRadius: SIZE / 2, borderWidth: 3 },
   leafBox: { width: 38, height: 38, alignItems: 'center', justifyContent: 'center' },
