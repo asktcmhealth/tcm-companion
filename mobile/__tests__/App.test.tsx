@@ -257,6 +257,41 @@ describe('results screen (dev sample: real garbled output)', () => {
     expect(screenText(tree)).toContain('You changed this');
   });
 
+  it('only allows "Mark as reviewed" when everything is checked and settled, and withdraws it on any change', async () => {
+    modelIsPresent();
+    const tree = await launch();
+    await press(tree, 'Run pipeline on sample text');
+
+    const reviewButton = () =>
+      tree.root.find(n => n.props.accessibilityRole === 'button' && textOf(n).includes('Mark as reviewed') && typeof n.props.onPress === 'function');
+    expect(reviewButton().props.disabled).toBe(true);
+    expect(screenText(tree)).toContain('not yet checked');
+    expect(screenText(tree)).toContain('uncertain match');
+
+    const keepButtons = () =>
+      tree.root.findAll(n => typeof n.props.onPress === 'function' && n.props.accessibilityRole === 'button' && /^Keep /.test(textOf(n)));
+    for (let guard = 0; guard < 20 && keepButtons().length > 0; guard++) {
+      await act(async () => keepButtons().at(-1)!.props.onPress());
+    }
+    expect(reviewButton().props.disabled).toBe(true); // still unticked doses
+
+    const boxes = () => tree.root.findAll(n => n.props.accessibilityRole === 'checkbox' && typeof n.props.onPress === 'function');
+    const total = boxes().length;
+    for (let i = 0; i < total; i++) {
+      await act(async () => boxes()[i].props.onPress());
+    }
+    expect(reviewButton().props.disabled).toBe(false);
+
+    await act(async () => reviewButton().props.onPress());
+    expect(screenText(tree)).toContain('Reviewed by physician,');
+    expect(() => reviewButton()).toThrow();
+
+    // changing anything afterwards cancels the review
+    await act(async () => boxes()[0].props.onPress());
+    expect(screenText(tree)).not.toContain('Reviewed by physician,');
+    expect(reviewButton().props.disabled).toBe(true);
+  });
+
   it('keeps the transcript hidden until asked for', async () => {
     modelIsPresent();
     const tree = await launch();

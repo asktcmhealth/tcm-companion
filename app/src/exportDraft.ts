@@ -26,9 +26,15 @@ interface Point {
 
 type T = (key: string) => string;
 
-export function buildDraftText(herbs: Herb[], points: Point[], confirmed: ReadonlySet<number>, t: T): string {
+export function buildDraftText(
+  herbs: Herb[],
+  points: Point[],
+  confirmed: ReadonlySet<number>,
+  t: T,
+  reviewedAt: string | null = null,
+): string {
   const verify = (alt?: string | null) => t("export_verify").replace("{alt}", alt ?? "?");
-  const lines: string[] = [t("export_header"), ""];
+  const lines: string[] = [reviewedAt ? t("export_header_reviewed").replace("{time}", reviewedAt) : t("export_header"), ""];
 
   if (herbs.length > 0) {
     lines.push(t("results_prescription_title"));

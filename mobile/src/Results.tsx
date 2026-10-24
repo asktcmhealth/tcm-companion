@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { parseDose, type EffectiveHerb, type EffectivePoint } from './herbEdits';
+import type { ReviewStatus } from './review';
 import type { Theme } from './theme';
 
 export type TFn = (key: string, vars?: Record<string, string | number>) => string;
@@ -49,6 +50,50 @@ function LinkButton({
       style={[styles.actionButton, { borderColor: theme.border, backgroundColor: theme.cardSunken }]}>
       <Text style={[styles.actionText, { color: theme.ink }]}>{label}</Text>
     </Pressable>
+  );
+}
+
+export function ReviewPanel({
+  theme,
+  t,
+  status,
+  reviewedTime,
+  onReview,
+}: {
+  theme: Theme;
+  t: TFn;
+  status: ReviewStatus;
+  reviewedTime: string | null;
+  onReview: () => void;
+}) {
+  const waiting = [
+    status.uncheckedDoses > 0 ? t('review_wait_unchecked', { n: status.uncheckedDoses }) : '',
+    status.unresolved > 0 ? t('review_wait_unresolved', { n: status.unresolved }) : '',
+  ].filter(Boolean);
+  if (status.nothingToReview) return null;
+  return (
+    <View style={[styles.reviewBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+      {reviewedTime ? (
+        <Text accessibilityRole="alert" style={[styles.reviewDone, { color: theme.accent }]}>
+          ✓ {t('review_done', { time: reviewedTime })}
+        </Text>
+      ) : (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !status.ready }}
+            disabled={!status.ready}
+            onPress={onReview}
+            style={[styles.reviewButton, { backgroundColor: status.ready ? theme.accent : theme.disabled }]}>
+            <Text style={[styles.reviewButtonText, { color: theme.onAccent }]}>{t('review_button')}</Text>
+          </Pressable>
+          {waiting.length > 0 && (
+            <Text style={[styles.note, { color: theme.inkMuted }]}>{waiting.join(' · ')}</Text>
+          )}
+        </>
+      )}
+      <Text style={[styles.note, { color: theme.inkMuted }]}>{t('review_note')}</Text>
+    </View>
   );
 }
 
@@ -320,6 +365,10 @@ const styles = StyleSheet.create({
   },
   actionText: { fontSize: 13, fontWeight: '600' },
   input: { borderWidth: 1, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, minWidth: 64, fontSize: 15 },
+  reviewBox: { borderWidth: 1, borderRadius: 8, padding: 12, marginTop: 4, marginBottom: 8 },
+  reviewButton: { borderRadius: 8, paddingVertical: 12, alignItems: 'center', minHeight: 44, justifyContent: 'center' },
+  reviewButtonText: { fontSize: 16, fontWeight: '700' },
+  reviewDone: { fontSize: 16, fontWeight: '700' },
   progress: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
   confirmLine: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 },
   confirmRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 },

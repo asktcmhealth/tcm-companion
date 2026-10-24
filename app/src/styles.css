@@ -179,6 +179,26 @@ body {
   border: 1px solid var(--border);
 }
 
+.review-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 0.9rem;
+}
+
+.review-panel .review-wait,
+.review-panel .review-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+
+.review-done {
+  margin: 0;
+  font-weight: 700;
+  color: var(--accent);
+}
+
 .copy-status {
   margin-left: 0.75rem;
   font-size: 0.85rem;

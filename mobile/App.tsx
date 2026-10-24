@@ -42,10 +42,11 @@ import {
 import { runPipeline, type PipelineOutput } from './src/runPipeline';
 import { defaultLang, translate, type Lang } from './src/i18n';
 import { useTheme, type Theme } from './src/theme';
-import { HerbList, PointList } from './src/Results';
+import { HerbList, PointList, ReviewPanel } from './src/Results';
 import { RecordButton } from './src/RecordButton';
 import { buildDraftText } from './src/exportDraft';
 import { applyHerbEdit, applyPointEdit, type HerbEdit, type PointEdit } from './src/herbEdits';
+import { activeReview, clockTime, reviewSignature, reviewStatus, type ReviewRecord } from './src/review';
 import { DEFAULT_RETENTION_DAYS, RETENTION_OPTIONS, loadRetentionDays, purgeOldRecordings, saveRetentionDays } from './src/retention';
 import {
   isTranscriptPlan,
@@ -151,13 +152,19 @@ function Screen(): React.JSX.Element {
   // The physician's corrections to the engine's output (see src/herbEdits.ts).
   const [herbEdits, setHerbEdits] = useState<Record<number, HerbEdit>>({});
   const [pointEdits, setPointEdits] = useState<Record<number, PointEdit>>({});
+  const [reviewRecord, setReviewRecord] = useState<ReviewRecord | null>(null);
   useEffect(() => {
     setConfirmedDoses(new Set());
     setHerbEdits({});
     setPointEdits({});
+    setReviewRecord(null);
   }, [output]);
   const herbs = useMemo(() => (output?.herbs ?? []).map((h, i) => applyHerbEdit(h, herbEdits[i])), [output, herbEdits]);
   const points = useMemo(() => (output?.points ?? []).map((p, i) => applyPointEdit(p, pointEdits[i])), [output, pointEdits]);
+  const status = useMemo(() => reviewStatus(herbs, points, confirmedDoses), [herbs, points, confirmedDoses]);
+  const signature = useMemo(() => reviewSignature(herbs, points, confirmedDoses), [herbs, points, confirmedDoses]);
+  const review = activeReview(reviewRecord, status, signature);
+  const markReviewed = useCallback(() => setReviewRecord({ signature, time: clockTime() }), [signature]);
   const untickDose = useCallback((index: number) => {
     // A changed herb or dose is a new thing to check against the recording.
     setConfirmedDoses(prev => {
@@ -611,12 +618,14 @@ function Screen(): React.JSX.Element {
               </View>
             )}
 
+            <ReviewPanel theme={theme} t={t} status={status} reviewedTime={review ? review.time : null} onReview={markReviewed} />
+
             {(output.herbs.length > 0 || output.points.length > 0) && (
               <Pressable
                 accessibilityRole="button"
                 onPress={() =>
                   // A dismissed share sheet is not an error; only the text leaves the app.
-                  void Share.share({ message: buildDraftText(herbs, points, confirmedDoses, t) }).catch(() => {})
+                  void Share.share({ message: buildDraftText(herbs, points, confirmedDoses, t, review ? review.time : null) }).catch(() => {})
                 }
                 style={styles.linkButton}>
                 <Text style={styles.linkButtonText}>{t('share_draft')}</Text>

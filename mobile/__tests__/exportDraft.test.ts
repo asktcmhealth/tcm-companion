@@ -43,6 +43,14 @@ describe('buildDraftText', () => {
     expect(text).toContain('- 甘草 10g  [edited by physician]');
   });
 
+  it('uses the reviewed header, with the time, once the physician has reviewed', () => {
+    const text = buildDraftText([herb({})], [], new Set([0]), t, '14:32');
+    const first = text.split('\n')[0];
+    expect(first).toMatch(/reviewed by physician at 14:32/);
+    expect(first).not.toMatch(/not signed off/);
+    expect(buildDraftText([herb({})], [], new Set([0]), t).split('\n')[0]).toMatch(/not signed off/);
+  });
+
   it('works in Chinese', () => {
     expect(buildDraftText([herb({})], [], new Set(), (k, v) => translate('zh', k, v))).toContain('剂量尚未核对');
   });

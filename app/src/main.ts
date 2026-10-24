@@ -3,6 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { listen } from "@tauri-apps/api/event";
 import { t, getLang, setLang, stagePhrases } from "./i18n";
 import { buildDraftText } from "./exportDraft";
+import { activeReview, clockTime, reviewSignature, reviewStatus, type ReviewRecord } from "./review";
 import {
   applyHerbEdit,
   applyPointEdit,
@@ -479,6 +480,47 @@ function handlePrescriptionClick(jobId: string, event: Event) {
   renderSelectedJob();
 }
 
+// "Reviewed" is per job and in memory only. It is withdrawn automatically the
+// moment anything it covered changes (see review.ts).
+const reviewRecords = new Map<string, ReviewRecord>();
+
+function currentReview(job: PatientJob) {
+  const herbs = effectiveHerbs(job);
+  const points = effectivePoints(job);
+  const confirmed = confirmedDoses.get(job.id) ?? new Set<number>();
+  const status = reviewStatus(herbs, points, confirmed);
+  const signature = reviewSignature(herbs, points, confirmed);
+  return { status, signature, review: activeReview(reviewRecords.get(job.id), status, signature) };
+}
+
+function renderReviewPanel(job: PatientJob) {
+  const el = document.querySelector<HTMLElement>("#review-panel");
+  if (!el) return;
+  const { status, review } = currentReview(job);
+  if (status.nothingToReview) {
+    el.hidden = true;
+    return;
+  }
+  el.hidden = false;
+  const waiting = [
+    status.uncheckedDoses > 0 ? t("review_wait_unchecked").replace("{n}", String(status.uncheckedDoses)) : "",
+    status.unresolved > 0 ? t("review_wait_unresolved").replace("{n}", String(status.unresolved)) : "",
+  ].filter(Boolean);
+  el.innerHTML = review
+    ? `<p class="review-done" role="status">✓ ${esc(t("review_done").replace("{time}", review.time))}</p>
+       <p class="review-note">${t("review_note")}</p>`
+    : `<button type="button" id="review-button"${status.ready ? "" : " disabled"}>${t("review_button")}</button>
+       ${waiting.length ? `<p class="review-wait">${esc(waiting.join(" · "))}</p>` : ""}
+       <p class="review-note">${t("review_note")}</p>`;
+  el.onclick = (event) => {
+    if (!(event.target as HTMLElement).closest("#review-button")) return;
+    const fresh = currentReview(job);
+    if (!fresh.status.ready) return;
+    reviewRecords.set(job.id, { signature: fresh.signature, time: clockTime() });
+    renderSelectedJob();
+  };
+}
+
 function handleAcupunctureClick(jobId: string, event: Event) {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>("button[data-action]");
   if (!button) return;
@@ -597,6 +639,7 @@ function renderSelectedJob() {
   }
   acupunctureEl.innerHTML = renderAcupuncture(effectivePoints(job));
   acupunctureEl.onclick = (event) => handleAcupunctureClick(job.id, event);
+  renderReviewPanel(job);
   deidEl.innerHTML = renderDeid(result.deid_report);
   rawEl.textContent = JSON.stringify(result, null, 2);
 }
@@ -851,7 +894,13 @@ async function copyDraft() {
   const job = jobs.find((j) => j.id === selectedJobId);
   const status = document.querySelector<HTMLElement>("#copy-status");
   if (!job?.result || !status) return;
-  const text = buildDraftText(effectiveHerbs(job), effectivePoints(job), confirmedDoses.get(job.id) ?? new Set(), t);
+  const text = buildDraftText(
+    effectiveHerbs(job),
+    effectivePoints(job),
+    confirmedDoses.get(job.id) ?? new Set(),
+    t,
+    currentReview(job).review?.time ?? null,
+  );
   try {
     await navigator.clipboard.writeText(text);
     status.textContent = t("copy_done");

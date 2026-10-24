@@ -13,8 +13,9 @@ export function buildDraftText(
   points: EffectivePoint[],
   confirmedDoses: ReadonlySet<number>,
   t: TFn,
+  reviewedAt: string | null = null,
 ): string {
-  const lines: string[] = [t('export_header'), ''];
+  const lines: string[] = [reviewedAt ? t('export_header_reviewed', { time: reviewedAt }) : t('export_header'), ''];
 
   if (herbs.length > 0) {
     lines.push(t('result_prescription'));
