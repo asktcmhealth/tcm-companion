@@ -247,10 +247,12 @@ Findings from first physician interview. Validate with 2–3 more before finalis
   de-identification pipeline first. Never send raw mobile transcript text to an LLM.
 - **Audio retention:** in-app recordings are deleted after 30 days by default (user-selectable 90).
   `delete_on_sign` is not offered until a sign-off step exists.
-- **Mobile saves the work in progress** (herbs, doses, acupoints, ticks, physician corrections, review
-  stamp) in the app's private storage so an interruption does not lose it. It never saves the transcript
-  or audio. The saved draft follows the same retention window as recordings (30 days default), is
-  replaced by the next result, and can be cleared with "Clear draft". Desktop does not save yet.
+- **Both apps save the work in progress** (herbs, doses, acupoints, ticks, physician corrections, review
+  stamp) so an interruption does not lose it. They never save the transcript, audio, consultation note,
+  de-identification report or correction edits (all can echo what was said). Saved drafts follow the
+  retention window (30 days default; desktop counts from when each result was produced) and can be
+  cleared ("Clear draft" on mobile, "Clear this draft" per patient on desktop). Mobile keeps one draft
+  (the next result replaces it); desktop keeps every finished patient in the list.
 - **Shared/copied drafts** contain only herbs/doses and acupoints (never the transcript), start with an
   "unsigned speech-recognition draft" warning, and mark uncertain or unchecked entries inline.
 

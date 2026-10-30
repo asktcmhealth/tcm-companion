@@ -4,6 +4,7 @@ import { listen } from "@tauri-apps/api/event";
 import { t, getLang, setLang, stagePhrases } from "./i18n";
 import { buildDraftText } from "./exportDraft";
 import { activeReview, clockTime, reviewSignature, reviewStatus, type ReviewRecord } from "./review";
+import { DRAFTS_KEY, parseDrafts, serializeDrafts } from "./drafts";
 import {
   applyHerbEdit,
   applyPointEdit,
@@ -60,6 +61,8 @@ interface PatientJob {
   transcript?: string;
   result?: PipelineResult;
   error?: string;
+  createdAt?: string; // when the result was produced (drives draft retention)
+  restored?: boolean; // came back from a saved draft: has no transcript, note or de-id report
 }
 
 const jobs: PatientJob[] = [];
@@ -117,6 +120,7 @@ async function runQueueWorker() {
         try {
           const raw = await invoke<string>("run_transcribe_and_process", { audioPath: next.audioPath });
           next.result = JSON.parse(raw);
+          next.createdAt = new Date().toISOString();
           next.status = "done";
           finishStage(next.label, summarize(next.result!), false);
         } catch (err) {
@@ -132,6 +136,7 @@ async function runQueueWorker() {
         try {
           const raw = await invoke<string>("run_note_pipeline", { transcript: next.transcript });
           next.result = JSON.parse(raw);
+          next.createdAt = new Date().toISOString();
           next.status = "done";
           finishStage(next.label, summarize(next.result!), false);
         } catch (err) {
@@ -143,6 +148,7 @@ async function runQueueWorker() {
 
       renderPatientList();
       if (selectedJobId === next.id) renderSelectedJob();
+      persistDrafts();
     }
   } finally {
     workerRunning = false;
@@ -578,6 +584,7 @@ function retrySelectedJob() {
 }
 
 function renderSelectedJob() {
+  persistDrafts();
   const panel = document.querySelector<HTMLElement>("#results-panel");
   const noteEl = document.querySelector<HTMLElement>("#consultation-note-output");
   const prescriptionEl = document.querySelector<HTMLElement>("#prescription-output");
@@ -595,7 +602,7 @@ function renderSelectedJob() {
 
   panel.hidden = false;
   const result = job.result;
-  noteEl.textContent = result.consultation_note || t("empty_note");
+  noteEl.textContent = job.restored ? t("draft_note_not_kept") : result.consultation_note || t("empty_note");
   if (!confirmedDoses.has(job.id)) confirmedDoses.set(job.id, new Set());
   const editing = editingDose && editingDose.jobId === job.id ? editingDose : null;
   prescriptionEl.innerHTML = renderPrescription(
@@ -640,7 +647,9 @@ function renderSelectedJob() {
   acupunctureEl.innerHTML = renderAcupuncture(effectivePoints(job));
   acupunctureEl.onclick = (event) => handleAcupunctureClick(job.id, event);
   renderReviewPanel(job);
-  deidEl.innerHTML = renderDeid(result.deid_report);
+  deidEl.innerHTML = job.restored
+    ? `<span class="empty-state">${t("draft_note_not_kept")}</span>`
+    : renderDeid(result.deid_report);
   rawEl.textContent = JSON.stringify(result, null, 2);
 }
 
@@ -910,6 +919,89 @@ async function copyDraft() {
   }
 }
 
+// ---------- Saved drafts (see drafts.ts) ----------
+
+// Nothing is written until the saved drafts have been read back, so an early
+// render of an empty list can never overwrite them.
+let draftsRestored = false;
+
+function persistDrafts() {
+  if (!draftsRestored) return;
+  try {
+    const drafts = jobs
+      .filter((j) => j.status === "done" && j.result && j.createdAt)
+      .map((j) => ({
+        id: j.id,
+        label: j.label,
+        createdAt: j.createdAt as string,
+        herbs: j.result!.prescription.herbs,
+        points: j.result!.acupuncture.points,
+        prescriptionSectionFound: j.result!.prescription_spans_found > 0,
+        confirmed: [...(confirmedDoses.get(j.id) ?? [])],
+        herbEdits: herbEdits.get(j.id) ?? {},
+        pointEdits: pointEdits.get(j.id) ?? {},
+        review: reviewRecords.get(j.id) ?? null,
+      }));
+    localStorage.setItem(DRAFTS_KEY, serializeDrafts(drafts));
+  } catch {
+    // storage unavailable: the app still works, drafts just won't survive a restart
+  }
+}
+
+function restoreDrafts() {
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(DRAFTS_KEY);
+  } catch {
+    draftsRestored = true;
+    return;
+  }
+  const days = Number(document.querySelector<HTMLSelectElement>("#retention-select")?.value ?? 30);
+  for (const d of parseDrafts(raw, days)) {
+    jobs.push({
+      id: d.id,
+      label: d.label,
+      status: "done",
+      createdAt: d.createdAt,
+      restored: true,
+      result: {
+        schema_version: "restored-draft",
+        prescription_spans_found: d.prescriptionSectionFound ? 1 : 0,
+        acupuncture_spans_found: d.points.length > 0 ? 1 : 0,
+        correction_edits: [],
+        prescription: { herbs: d.herbs },
+        acupuncture: { points: d.points },
+        deid_report: [],
+        consultation_note: "",
+        deidentified_transcript: "",
+      },
+    });
+    confirmedDoses.set(d.id, new Set(d.confirmed));
+    herbEdits.set(d.id, d.herbEdits);
+    pointEdits.set(d.id, d.pointEdits);
+    if (d.review) reviewRecords.set(d.id, d.review);
+    patientCounter += 1;
+  }
+  draftsRestored = true;
+  if (jobs.length > 0) selectJob(jobs[jobs.length - 1].id);
+  persistDrafts(); // also drops any that were past the window
+}
+
+function clearSelectedDraft() {
+  const index = jobs.findIndex((j) => j.id === selectedJobId);
+  if (index === -1) return;
+  const [gone] = jobs.splice(index, 1);
+  confirmedDoses.delete(gone.id);
+  herbEdits.delete(gone.id);
+  pointEdits.delete(gone.id);
+  reviewRecords.delete(gone.id);
+  editingDose = null;
+  selectedJobId = jobs.length > 0 ? jobs[Math.min(index, jobs.length - 1)].id : null;
+  persistDrafts();
+  renderPatientList();
+  renderSelectedJob();
+}
+
 // Housekeeping: in-app recordings older than the chosen window are deleted at
 // launch and whenever the window changes (default 30 days).
 function setupRetention() {
@@ -937,6 +1029,7 @@ function setupRetention() {
 
 window.addEventListener("DOMContentLoaded", () => {
   setupRetention();
+  restoreDrafts();
   setupTabs();
   setupLangToggle();
   applyTranslations();
@@ -945,4 +1038,5 @@ window.addEventListener("DOMContentLoaded", () => {
   document.querySelector("#record-button")?.addEventListener("click", toggleRecording);
   document.querySelector("#job-retry")?.addEventListener("click", retrySelectedJob);
   document.querySelector("#copy-draft")?.addEventListener("click", copyDraft);
+  document.querySelector("#clear-draft")?.addEventListener("click", clearSelectedDraft);
 });
