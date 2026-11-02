@@ -41,7 +41,9 @@ import {
 } from './src/whisperModel';
 import { runPipeline, type PipelineOutput } from './src/runPipeline';
 import { defaultLang, translate, type Lang } from './src/i18n';
-import { useTheme, type Theme } from './src/theme';
+import { cardShadow, darkTheme, serifFont, useTheme, type Theme } from './src/theme';
+import { Ornament, SectionTitle, Sprig, Steps } from './src/Brand';
+import { Waveform } from './src/Waveform';
 import { HerbList, PointList, ReviewPanel } from './src/Results';
 import { clearDraft, loadDraft, saveDraft } from './src/draftStore';
 import { RecordButton } from './src/RecordButton';
@@ -264,6 +266,7 @@ function Screen(): React.JSX.Element {
   }, []);
   const [showTranscript, setShowTranscript] = useState(false);
   const [level, setLevel] = useState(0);
+  const [levelTick, setLevelTick] = useState(0);
 
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const whisperContextRef = useRef<WhisperContext | null>(null);
@@ -441,7 +444,10 @@ function Screen(): React.JSX.Element {
       setLevel(0);
       return;
     }
-    const id = setInterval(() => setLevel(recorderRef.current?.takeRecentPeak() ?? 0), 120);
+    const id = setInterval(() => {
+      setLevel(recorderRef.current?.takeRecentPeak() ?? 0);
+      setLevelTick(n => n + 1);
+    }, 120);
     return () => clearInterval(id);
   }, [stage]);
 
@@ -505,15 +511,18 @@ function Screen(): React.JSX.Element {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={theme.bg === '#1c1e1a' ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={theme === darkTheme ? 'light-content' : 'dark-content'} />
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Switch language"
-          onPress={() => setLang(l => (l === 'en' ? 'zh' : 'en'))}
-          style={styles.langToggle}>
-          <Text style={styles.langToggleText}>{t('lang_toggle')}</Text>
-        </Pressable>
+        <View style={styles.topRow}>
+          <Sprig theme={theme} size={48} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Switch language"
+            onPress={() => setLang(l => (l === 'en' ? 'zh' : 'en'))}
+            style={styles.langToggle}>
+            <Text style={styles.langToggleText}>{t('lang_toggle')}</Text>
+          </Pressable>
+        </View>
 
         <Text style={styles.title} accessibilityRole="header">
           {t('app_name')}
@@ -522,6 +531,7 @@ function Screen(): React.JSX.Element {
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{t('offline_badge')}</Text>
         </View>
+        <Ornament theme={theme} />
 
         {failure && (
           <View accessibilityRole="alert" style={styles.errorCard}>
@@ -563,6 +573,12 @@ function Screen(): React.JSX.Element {
           </View>
         )}
 
+        {stage === 'ready' && !output && (
+          <View style={styles.stepsCard}>
+            <Steps theme={theme} steps={[t('step_record'), t('step_check'), t('step_share')]} />
+          </View>
+        )}
+
         {(canRecord || stage === 'transcribing') && (
           <View style={styles.recordArea}>
             <RecordButton
@@ -574,11 +590,7 @@ function Screen(): React.JSX.Element {
               onPress={handleRecordPress}
             />
 
-            {stage === 'recording' && (
-              <View style={styles.meterTrack} accessibilityLabel="Microphone level">
-                <View style={[styles.meterFill, { width: `${Math.min(100, Math.round(level * 400))}%` }]} />
-              </View>
-            )}
+            {stage === 'recording' && <Waveform level={level} tick={levelTick} active theme={theme} />}
 
             <Text style={styles.hint}>
               {stage === 'recording' ? t('recording_hint') : stage === 'transcribing' ? '' : t('idle_hint')}
@@ -632,9 +644,7 @@ function Screen(): React.JSX.Element {
               </Text>
             )}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle} accessibilityRole="header">
-                {t('result_prescription')}
-              </Text>
+              <SectionTitle theme={theme}>{t('result_prescription')}</SectionTitle>
               <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
               {output.herbs.length > 0 ? (
                 <HerbList
@@ -657,9 +667,7 @@ function Screen(): React.JSX.Element {
 
             {output.points.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionTitle} accessibilityRole="header">
-                  {t('result_acupuncture')}
-                </Text>
+                <SectionTitle theme={theme}>{t('result_acupuncture')}</SectionTitle>
                 <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
                 <PointList
                   points={points}
@@ -728,8 +736,9 @@ function makeStyles(c: Theme) {
     // Centered column no wider than a large phone, so tablets don't stretch cards across the whole screen.
     scroll: { padding: 20, paddingBottom: 48, width: '100%', maxWidth: 640, alignSelf: 'center' },
     restoredNote: { color: c.inkMuted, fontSize: 13, marginBottom: 12 },
+    topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
+    stepsCard: { ...cardShadow(c), backgroundColor: c.card, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 16 },
     langToggle: {
-      alignSelf: 'flex-end',
       backgroundColor: c.card,
       borderColor: c.border,
       borderWidth: 1,
@@ -739,7 +748,7 @@ function makeStyles(c: Theme) {
       minHeight: 32,
     },
     langToggleText: { color: c.inkMuted, fontSize: 13, fontWeight: '600' },
-    title: { fontSize: 24, fontWeight: '700', color: c.accentStrong, marginTop: 8 },
+    title: { fontSize: 28, fontWeight: '700', color: c.accentStrong, marginTop: 6, fontFamily: serifFont },
     subtitle: { fontSize: 14, color: c.inkMuted, marginTop: 6, lineHeight: 20 },
     badge: {
       alignSelf: 'flex-start',
@@ -748,19 +757,19 @@ function makeStyles(c: Theme) {
       paddingVertical: 4,
       paddingHorizontal: 12,
       marginTop: 12,
-      marginBottom: 20,
     },
     badgeText: { color: c.accent, fontSize: 12, fontWeight: '600' },
     card: {
       backgroundColor: c.card,
       borderColor: c.border,
       borderWidth: 1,
-      borderRadius: 12,
+      borderRadius: 14,
       padding: 18,
       gap: 10,
       marginBottom: 16,
+      ...cardShadow(c),
     },
-    cardTitle: { fontSize: 17, fontWeight: '700', color: c.ink },
+    cardTitle: { fontSize: 19, fontWeight: '700', color: c.ink, fontFamily: serifFont },
     bodyText: { fontSize: 14, color: c.inkMuted, lineHeight: 20 },
     statusText: { fontSize: 15, color: c.ink, fontWeight: '600' },
     metaText: { fontSize: 13, color: c.inkMuted },
@@ -797,8 +806,6 @@ function makeStyles(c: Theme) {
     },
     secondaryButtonText: { color: c.danger, fontWeight: '600' },
     recordArea: { alignItems: 'center', marginBottom: 16 },
-    meterTrack: { width: 180, height: 6, borderRadius: 3, backgroundColor: c.cardSunken, overflow: 'hidden', marginTop: 8 },
-    meterFill: { height: 6, backgroundColor: c.accent },
     hint: { fontSize: 13, color: c.inkMuted, textAlign: 'center', marginTop: 10 },
     silenceWarning: {
       color: c.warnInk,

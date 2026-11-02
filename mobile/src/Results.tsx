@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { parseDose, type EffectiveHerb, type EffectivePoint } from './herbEdits';
 import type { ReviewStatus } from './review';
-import type { Theme } from './theme';
+import { cardShadow, serifFont, type Theme } from './theme';
+import { HERB_DATABASE } from './herbDatabase';
 
 export type TFn = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -156,6 +157,7 @@ export function HerbList({
           style={[
             styles.row,
             { backgroundColor: theme.card, borderColor: theme.border },
+            cardShadow(theme),
             h.ambiguous && { borderLeftWidth: 3, borderLeftColor: theme.verifyInk },
           ]}>
           <View style={styles.rowTop}>
@@ -176,6 +178,9 @@ export function HerbList({
               </View>
               <Text style={[styles.name, { color: theme.ink }]}>
                 {h.name} <Text style={[styles.meta, { color: theme.inkMuted }]}>{h.dosage}{h.unit}</Text>
+                {HERB_DATABASE[h.name] ? (
+                  <Text style={[styles.category, { color: theme.brass }]}>{'  '}{HERB_DATABASE[h.name].category}</Text>
+                ) : null}
               </Text>
             </Pressable>
             <View style={styles.chips}>
@@ -295,6 +300,7 @@ export function PointList({
           style={[
             styles.row,
             { backgroundColor: theme.card, borderColor: theme.border },
+            cardShadow(theme),
             p.ambiguous && { borderLeftWidth: 3, borderLeftColor: theme.verifyInk },
           ]}>
           <View style={styles.rowTop}>
@@ -344,9 +350,10 @@ export function PointList({
 const styles = StyleSheet.create({
   banner: { borderWidth: 1, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 10 },
   bold: { fontWeight: '700' },
-  row: { borderWidth: 1, borderRadius: 8, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 6 },
+  row: { borderWidth: 1, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12, marginBottom: 8 },
   rowTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 },
-  name: { fontSize: 16, fontWeight: '600', flexShrink: 1 },
+  name: { fontSize: 17, fontWeight: '600', flexShrink: 1, fontFamily: serifFont },
+  category: { fontSize: 12, fontWeight: '500' },
   meta: { fontSize: 14, fontWeight: '400' },
   chips: { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderRadius: 999, paddingVertical: 2, paddingHorizontal: 8 },
