@@ -149,6 +149,7 @@ function Screen(): React.JSX.Element {
   const [downloadFraction, setDownloadFraction] = useState(0);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [output, setOutput] = useState<PipelineOutput | null>(null);
+  const [transcribedIn, setTranscribedIn] = useState<number | null>(null);
   // Doses the physician has ticked off for the current result. A new result
   // (new object) always starts with nothing ticked.
   const [confirmedDoses, setConfirmedDoses] = useState<ReadonlySet<number>>(new Set());
@@ -459,12 +460,15 @@ function Screen(): React.JSX.Element {
       setStage('transcribing');
       setFailure(null);
       setOutput(null);
+      setTranscribedIn(null);
       setShowTranscript(false);
+      const started = Date.now();
       try {
         const whisperContext = whisperContextRef.current;
         if (!whisperContext) throw new Error('The speech model is not loaded yet.');
         const { promise } = whisperContext.transcribe(audioPath, { language: 'zh' });
         const { result } = await promise;
+        setTranscribedIn(Math.round((Date.now() - started) / 1000));
         setOutput(runPipeline(result));
         setStage('ready');
       } catch (err) {
@@ -642,6 +646,9 @@ function Screen(): React.JSX.Element {
               <Text accessibilityRole="alert" style={styles.restoredNote}>
                 {t('draft_restored', { when: restoredFrom })}
               </Text>
+            )}
+            {transcribedIn !== null && (
+              <Text style={styles.metaText}>{t('transcribed_in', { time: formatClock(transcribedIn) })}</Text>
             )}
             <View style={styles.section}>
               <SectionTitle theme={theme}>{t('result_prescription')}</SectionTitle>

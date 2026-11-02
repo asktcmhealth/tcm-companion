@@ -33,6 +33,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     transcribing: 'Transcribing on this phone…',
     transcribing_hint: 'Keep the app open and the screen on until this finishes. Long recordings can take a few minutes.',
     elapsed: 'Elapsed {time}',
+    transcribed_in: 'Transcribed in {time}',
 
     result_prescription: 'Prescription draft',
     result_prescription_desc: 'Requires physician review before sign-off. The herb and acupoint lists and dose ranges are an unreviewed draft, so check every entry.',
@@ -107,6 +108,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     transcribing: '正在本机转写…',
     transcribing_hint: '转写完成前请保持应用打开且屏幕常亮。较长的录音可能需要几分钟。',
     elapsed: '已用时 {time}',
+    transcribed_in: '转写用时 {time}',
 
     result_prescription: '处方草案',
     result_prescription_desc: '签署前须经医师核实。药材、穴位名录及剂量范围为未经审核的草稿，请逐项核对。',
