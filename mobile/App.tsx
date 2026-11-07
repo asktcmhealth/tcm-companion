@@ -308,8 +308,6 @@ function Screen(): React.JSX.Element {
     });
   }, []);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [level, setLevel] = useState(0);
-  const [levelTick, setLevelTick] = useState(0);
 
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const whisperContextRef = useRef<WhisperContext | null>(null);
@@ -481,18 +479,9 @@ function Screen(): React.JSX.Element {
     }
   }, [loadModel]);
 
-  // Live input level for the meter; polled so we don't re-render per audio chunk.
-  useEffect(() => {
-    if (stage !== 'recording') {
-      setLevel(0);
-      return;
-    }
-    const id = setInterval(() => {
-      setLevel(recorderRef.current?.takeRecentPeak() ?? 0);
-      setLevelTick(n => n + 1);
-    }, 120);
-    return () => clearInterval(id);
-  }, [stage]);
+  // The waveform polls the recorder's level itself, so the whole screen does
+  // not re-render several times a second while recording.
+  const sampleLevel = useCallback(() => recorderRef.current?.takeRecentPeak() ?? 0, []);
 
   const showSilenceWarning =
     stage === 'recording' && recordingSeconds >= 4 && (recorderRef.current?.peakSoFar ?? 1) < SILENCE_PEAK_THRESHOLD;
@@ -639,7 +628,7 @@ function Screen(): React.JSX.Element {
               onPress={handleRecordPress}
             />
 
-            {stage === 'recording' && <Waveform level={level} tick={levelTick} active theme={theme} />}
+            {stage === 'recording' && <Waveform sample={sampleLevel} theme={theme} />}
 
             <Text style={styles.hint}>
               {stage === 'recording' ? t('recording_hint') : stage === 'transcribing' ? '' : t('idle_hint')}
