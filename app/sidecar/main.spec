@@ -1,5 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
 from PyInstaller.utils.hooks import copy_metadata
+
+# Build with build_sidecar.py (big thread stack); see its docstring for why.
+sys.setrecursionlimit(sys.getrecursionlimit() * 5)
 
 datas = []
 datas += copy_metadata('torchcodec')

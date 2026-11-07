@@ -52,7 +52,7 @@ cd app/src-tauri && cargo test --lib                   # Rust tests
 
 # Rebuild the text sidecar after ANY change under benchmark/ that the desktop pipeline uses
 # (heavy on an 8 GB machine: close other apps first). The installed .exe goes stale otherwise.
-cd app/sidecar && python -m PyInstaller main.spec --noconfirm
+cd app/sidecar && python build_sidecar.py   # NOT bare pyinstaller: it needs a big thread stack, else ~200 modules are silently dropped (see its docstring)
 cp app/sidecar/dist/main.exe app/src-tauri/binaries/main-x86_64-pc-windows-msvc.exe
 ```
 
