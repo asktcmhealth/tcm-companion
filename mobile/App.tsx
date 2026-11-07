@@ -46,6 +46,22 @@ import { Ornament, SectionTitle, Sprig, Steps } from './src/Brand';
 import { Waveform } from './src/Waveform';
 import { HerbList, PointList, ReviewPanel } from './src/Results';
 import { clearDraft, loadDraft, saveDraft } from './src/draftStore';
+import {
+  ASR_LANGUAGES,
+  DEFAULT_ASR_SETTINGS,
+  THREAD_OPTIONS,
+  loadAsrSettings,
+  saveAsrSettings,
+  whisperOptions,
+  type AsrSettings,
+} from './src/asrSettings';
+import {
+  addTranscript,
+  clearTranscripts,
+  deleteTranscript,
+  loadTranscripts,
+  type TranscriptEntry,
+} from './src/transcriptHistory';
 import { RecordButton } from './src/RecordButton';
 import { buildDraftText } from './src/exportDraft';
 import { applyHerbEdit, applyPointEdit, type HerbEdit, type PointEdit } from './src/herbEdits';
@@ -243,12 +259,37 @@ function Screen(): React.JSX.Element {
     });
   }, []);
   const [retentionDays, setRetentionDays] = useState<number>(DEFAULT_RETENTION_DAYS);
+  const retentionRef = useRef(DEFAULT_RETENTION_DAYS);
+  retentionRef.current = retentionDays;
+  const [asr, setAsr] = useState<AsrSettings>(DEFAULT_ASR_SETTINGS);
+  const asrRef = useRef(asr);
+  asrRef.current = asr;
+  const [history, setHistory] = useState<TranscriptEntry[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   useEffect(() => {
     // Housekeeping at launch: remove recordings past the retention window.
     void loadRetentionDays().then(days => {
       setRetentionDays(days);
+      void loadTranscripts(days).then(setHistory);
       return purgeOldRecordings(days);
     });
+    void loadAsrSettings().then(setAsr);
+  }, []);
+  const changeAsr = useCallback((patch: Partial<AsrSettings>) => {
+    const next = { ...asrRef.current, ...patch };
+    setAsr(next);
+    void saveAsrSettings(next).catch(() => {});
+  }, []);
+  const cycleThreads = useCallback(() => {
+    const i = THREAD_OPTIONS.indexOf(asrRef.current.threads as (typeof THREAD_OPTIONS)[number]);
+    changeAsr({ threads: THREAD_OPTIONS[(i + 1) % THREAD_OPTIONS.length] });
+  }, [changeAsr]);
+  const openTranscript = useCallback((entry: TranscriptEntry) => {
+    setFailure(null);
+    setShowTranscript(false);
+    setTranscribedIn(entry.seconds);
+    setOutput(runPipeline(entry.text));
+    setShowHistory(false);
   }, []);
   const cycleRetention = useCallback(() => {
     const next = RETENTION_OPTIONS[(RETENTION_OPTIONS.indexOf(retentionDays as 30 | 90) + 1) % RETENTION_OPTIONS.length];
@@ -256,6 +297,7 @@ function Screen(): React.JSX.Element {
     void saveRetentionDays(next).catch(() => {});
     void purgeOldRecordings(next);
     void loadDraft(next); // also removes a saved draft that is now past the window
+    void loadTranscripts(next).then(setHistory); // and transcripts past it
   }, [retentionDays]);
   const toggleDose = useCallback((index: number) => {
     setConfirmedDoses(prev => {
@@ -466,11 +508,14 @@ function Screen(): React.JSX.Element {
       try {
         const whisperContext = whisperContextRef.current;
         if (!whisperContext) throw new Error('The speech model is not loaded yet.');
-        const { promise } = whisperContext.transcribe(audioPath, { language: 'zh' });
+        const settings = asrRef.current;
+        const { promise } = whisperContext.transcribe(audioPath, whisperOptions(settings));
         const { result } = await promise;
-        setTranscribedIn(Math.round((Date.now() - started) / 1000));
+        const seconds = Math.round((Date.now() - started) / 1000);
+        setTranscribedIn(seconds);
         setOutput(runPipeline(result));
         setStage('ready');
+        void addTranscript(result, settings.language, seconds, retentionRef.current).then(setHistory, () => {});
       } catch (err) {
         fail(err, 'ready');
       }
@@ -600,6 +645,22 @@ function Screen(): React.JSX.Element {
               {stage === 'recording' ? t('recording_hint') : stage === 'transcribing' ? '' : t('idle_hint')}
             </Text>
 
+            {stage === 'ready' && (
+              <View style={styles.langRow}>
+                {ASR_LANGUAGES.map(code => (
+                  <Pressable
+                    key={code}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: asr.language === code }}
+                    onPress={() => changeAsr({ language: code })}
+                    style={[styles.chip, asr.language === code && styles.chipOn]}>
+                    <Text style={[styles.chipText, asr.language === code && styles.chipTextOn]}>{t('asr_lang_' + code)}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            {stage === 'ready' && asr.language !== 'zh' && <Text style={styles.hint}>{t('asr_lang_note')}</Text>}
+
             {showSilenceWarning && (
               <Text accessibilityRole="alert" style={styles.silenceWarning}>
                 {lang === 'zh'
@@ -618,6 +679,53 @@ function Screen(): React.JSX.Element {
             <Text style={styles.bodyText}>{t('transcribing_hint')}</Text>
           </View>
         )}
+
+        {history.length > 0 && stage === 'ready' && (
+          <View style={styles.historyBox}>
+            <Pressable accessibilityRole="button" onPress={() => setShowHistory(s => !s)} style={styles.linkButton}>
+              <Text style={styles.linkButtonText}>
+                {t(showHistory ? 'history_hide' : 'history_show', { n: history.length })}
+              </Text>
+            </Pressable>
+            {showHistory && (
+              <>
+                <Text style={styles.sectionNote}>{t('history_note', { days: retentionDays })}</Text>
+                {history.map(entry => (
+                  <View key={entry.id} style={styles.historyRow}>
+                    <Pressable accessibilityRole="button" onPress={() => openTranscript(entry)} style={{ flex: 1 }}>
+                      <Text style={styles.metaText}>
+                        {new Date(entry.savedAt).toLocaleString()}
+                        {entry.seconds !== null ? `  ·  ${formatClock(entry.seconds)}` : ''}
+                      </Text>
+                      <Text numberOfLines={2} style={styles.transcriptText}>
+                        {entry.text}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={t('history_delete')}
+                      onPress={() => void deleteTranscript(entry.id).then(setHistory)}
+                      style={styles.historyDelete}>
+                      <Text style={styles.linkButtonText}>{t('history_delete')}</Text>
+                    </Pressable>
+                  </View>
+                ))}
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void clearTranscripts().then(() => setHistory([]))}
+                  style={styles.linkButton}>
+                  <Text style={styles.linkButtonText}>{t('history_clear')}</Text>
+                </Pressable>
+              </>
+            )}
+          </View>
+        )}
+
+        <Pressable accessibilityRole="button" onPress={cycleThreads} style={styles.linkButton}>
+          <Text style={[styles.hint, { marginTop: 0 }]}>
+            {asr.threads === 0 ? t('threads_auto') : t('threads_n', { n: asr.threads })}
+          </Text>
+        </Pressable>
 
         <Pressable accessibilityRole="button" onPress={cycleRetention} style={styles.linkButton}>
           <Text style={[styles.hint, { marginTop: 0 }]}>{t('retention_label', { days: retentionDays })}</Text>
@@ -832,6 +940,14 @@ function makeStyles(c: Theme) {
     sectionTitle: { fontSize: 18, fontWeight: '700', color: c.ink },
     sectionNote: { fontSize: 13, color: c.inkMuted, marginTop: 2, marginBottom: 10 },
     emptyState: { fontSize: 14, color: c.inkMuted, fontStyle: 'italic', lineHeight: 20 },
+    langRow: { flexDirection: 'row', gap: 8, marginTop: 10, justifyContent: 'center' },
+    chip: { borderWidth: 1, borderColor: c.border, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 14, minHeight: 36, justifyContent: 'center' },
+    chipOn: { backgroundColor: c.accentSoft, borderColor: c.accent },
+    chipText: { color: c.inkMuted, fontSize: 13, fontWeight: '600' },
+    chipTextOn: { color: c.accentStrong },
+    historyBox: { marginBottom: 8 },
+    historyRow: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: c.border, borderRadius: 12, backgroundColor: c.card, padding: 10, marginBottom: 8 },
+    historyDelete: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 6 },
     linkButton: { alignSelf: 'flex-start', paddingVertical: 10, minHeight: 44, justifyContent: 'center' },
     linkButtonText: { color: c.accent, fontSize: 14, fontWeight: '600' },
     transcriptBox: {

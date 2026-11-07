@@ -26,6 +26,7 @@ Decisions made while building (details in `plan-review.md`, "Mobile app: data-ha
   uncertain/unchecked entries. No sign-off step exists yet.
 - Mobile never sends transcripts to an LLM, so de-identification is desktop-only.
 - Audio retention: in-app recordings are deleted after 30 days by default (90 optional).
+- Mobile saves recent transcripts (max 20) on the device so an earlier recording can be reopened; they follow the same 30/90-day window, can be deleted one by one or all at once, and never leave the device. The draft file still holds no transcript. Transcription language (Mandarin default / English / Auto) is a user setting; herb checking only works on Chinese text.
 - The herb (126) and acupoint (58) databases are DRAFTS with no physician sign-off yet; review
   sheets are in `physician-review/`. Do not present them as verified.
 - Do not add a Whisper `initial_prompt` herb list: it caused hallucinated paragraphs on desktop and
