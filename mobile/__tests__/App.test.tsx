@@ -416,3 +416,23 @@ describe('recording while an earlier recording is still transcribing', () => {
     expect(screenText(tree)).not.toContain('is ready');
   });
 });
+
+describe('the transcript shown on screen', () => {
+  it('has names, ID numbers and phone numbers removed, while the herbs are untouched', async () => {
+    modelIsPresent();
+    let finish!: (v: { result: string }) => void;
+    initWhisper.mockResolvedValue({
+      release: jest.fn(),
+      transcribe: jest.fn(() => ({ promise: new Promise<{ result: string }>(resolve => (finish = resolve)) })),
+    });
+    const tree = await launch();
+    await press(tree, 'Transcribe sample audio');
+    await act(async () => finish({ result: 'hello today patient is julie low,今天来的病人叫张三，电话81234567。处方：柴胡10克，当归10克' }));
+    await flush();
+    await press(tree, 'Show transcript');
+    const text = screenText(tree);
+    expect(text).not.toMatch(/julie|low,|张三|81234567/);
+    expect(text).toContain('[NAME]');
+    expect(text).toContain('柴胡10克');
+  });
+});

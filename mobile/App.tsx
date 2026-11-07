@@ -44,6 +44,7 @@ import { runPipeline, type PipelineOutput } from './src/runPipeline';
 import { defaultLang, translate, type Lang } from './src/i18n';
 import { cardShadow, darkTheme, serifFont, useTheme, type Theme } from './src/theme';
 import { Ornament, SectionTitle, Sprig, Steps } from './src/Brand';
+import { redactIdentifiers } from './src/redact';
 import { Waveform } from './src/Waveform';
 import { HerbList, PointList, ReviewPanel } from './src/Results';
 import { clearDraft, loadDraft, saveDraft } from './src/draftStore';
@@ -915,8 +916,9 @@ function Screen(): React.JSX.Element {
               <View style={styles.transcriptBox}>
                 <Text style={styles.transcriptLabel}>{t('result_transcript')}</Text>
                 <Text selectable style={styles.transcriptText}>
-                  {output.transcript}
+                  {redactIdentifiers(output.transcript)}
                 </Text>
+                <Text style={styles.sectionNote}>{t('history_redacted_note')}</Text>
               </View>
             )}
           </>
