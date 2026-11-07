@@ -364,3 +364,55 @@ describe('results screen (dev sample: real garbled output)', () => {
     expect(screenText(tree)).not.toContain('辨证为');
   });
 });
+
+describe('recording while an earlier recording is still transcribing', () => {
+  it('queues the second one, runs them one at a time, and never replaces a draft that is being worked on', async () => {
+    modelIsPresent();
+    const finishers: Array<(v: { result: string }) => void> = [];
+    const transcribe = jest.fn(() => ({ promise: new Promise<{ result: string }>(resolve => finishers.push(resolve)) }));
+    initWhisper.mockResolvedValue({ release: jest.fn(), transcribe });
+    const tree = await launch();
+
+    await press(tree, 'Transcribe sample audio');
+    // The Record button must still be usable while the first one is transcribing.
+    expect(screenText(tree)).toContain('Transcribing recording 1');
+    await press(tree, 'Transcribe sample audio');
+    expect(screenText(tree)).toContain('1 more waiting');
+    expect(transcribe).toHaveBeenCalledTimes(1); // one at a time
+
+    await act(async () => finishers[0]({ result: '处方：柴胡10克，当归10克，甘草6克' }));
+    await flush();
+    expect(screenText(tree)).toContain('柴胡'); // nothing was on screen, so it shows straight away
+    expect(transcribe).toHaveBeenCalledTimes(2);
+
+    await act(async () => finishers[1]({ result: '处方：黄芪30克，党参15克，茯苓20克' }));
+    await flush();
+    const text = screenText(tree);
+    expect(text).toContain('柴胡'); // the draft being worked on is still there
+    expect(text).not.toContain('黄芪');
+    expect(text).toContain('Recording 2 is ready');
+  });
+
+  it('shows a finished recording straight away when the draft on screen is marked reviewed', async () => {
+    modelIsPresent();
+    const finishers: Array<(v: { result: string }) => void> = [];
+    initWhisper.mockResolvedValue({
+      release: jest.fn(),
+      transcribe: jest.fn(() => ({ promise: new Promise<{ result: string }>(resolve => finishers.push(resolve)) })),
+    });
+    const tree = await launch();
+    await press(tree, 'Transcribe sample audio');
+    await act(async () => finishers[0]({ result: '处方：柴胡10克' }));
+    await flush();
+    const boxes = () => tree.root.findAll(n => n.props.accessibilityRole === 'checkbox' && typeof n.props.onPress === 'function');
+    await act(async () => boxes()[0].props.onPress());
+    await press(tree, 'Mark as reviewed');
+    expect(screenText(tree)).toContain('Reviewed');
+
+    await press(tree, 'Transcribe sample audio');
+    await act(async () => finishers[1]({ result: '处方：黄芪30克' }));
+    await flush();
+    expect(screenText(tree)).toContain('黄芪');
+    expect(screenText(tree)).not.toContain('is ready');
+  });
+});

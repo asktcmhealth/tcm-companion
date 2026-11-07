@@ -18,6 +18,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   PermissionsAndroid,
   Platform,
   Pressable,
@@ -88,6 +89,18 @@ type Stage =
 // What "Try again" does after a failure: model problems redo setup; a failed
 // recording/transcription just returns to the ready screen (the speech model
 // is already loaded).
+interface QueuedRecording {
+  n: number;
+  path: string;
+  settings: AsrSettings;
+}
+
+interface ReadyResult {
+  n: number;
+  output: PipelineOutput;
+  seconds: number;
+}
+
 type Failure = { message: string; retry: 'setup' | 'ready' };
 
 // Native-bridge rejections often come through as plain {code, message}
@@ -126,7 +139,7 @@ function formatClock(totalSeconds: number): string {
 }
 
 // Whole seconds elapsed while `active`, reset when it turns off.
-function useElapsedSeconds(active: boolean): number {
+function useElapsedSeconds(active: boolean, resetKey: unknown = 0): number {
   const [seconds, setSeconds] = useState(0);
   useEffect(() => {
     if (!active) {
@@ -136,7 +149,7 @@ function useElapsedSeconds(active: boolean): number {
     const startedAt = Date.now();
     const id = setInterval(() => setSeconds(Math.floor((Date.now() - startedAt) / 1000)), 1000);
     return () => clearInterval(id);
-  }, [active]);
+  }, [active, resetKey]);
   return seconds;
 }
 
@@ -316,10 +329,12 @@ function Screen(): React.JSX.Element {
   const recorderRef = useRef<AudioRecorder | null>(null);
 
   const recordingSeconds = useElapsedSeconds(stage === 'recording');
+  const [queue, setQueue] = useState<QueuedRecording[]>([]);
+  const queueRef = useRef<QueuedRecording[]>([]);
 
   // A locked screen can pause recording or transcription (iOS especially), so
   // the screen is held on only while one of them is running -- never otherwise.
-  const busy = stage === 'recording' || stage === 'transcribing';
+  const busy = stage === 'recording' || stage === 'transcribing' || queue.length > 0;
   useEffect(() => {
     if (!busy) return;
     try {
@@ -335,7 +350,7 @@ function Screen(): React.JSX.Element {
       }
     };
   }, [busy]);
-  const transcribingSeconds = useElapsedSeconds(stage === 'transcribing');
+  const transcribingSeconds = useElapsedSeconds(stage === 'transcribing' || queue.length > 0, queue[0]?.n);
 
   const fail = useCallback((err: unknown, retry: Failure['retry']) => {
     setFailure({ message: formatError(err), retry });
@@ -488,30 +503,86 @@ function Screen(): React.JSX.Element {
   const showSilenceWarning =
     stage === 'recording' && recordingSeconds >= 4 && (recorderRef.current?.peakSoFar ?? 1) < SILENCE_PEAK_THRESHOLD;
 
+  // ---- Transcription queue (the same idea as the desktop patient queue) ----
+  // Recording is cheap; transcription is slow and uses the CPU, and the speech
+  // model can only do one at a time. So a recording is queued the moment it
+  // stops and the physician can start the next patient straight away. A finished
+  // result never replaces a draft the physician is still working on: it waits
+  // in a "ready" list until they open it (or shows itself if nothing is open,
+  // or the open draft is marked reviewed).
+  const workerRunning = useRef(false);
+  const recordingCounter = useRef(0);
+  const [readyResults, setReadyResults] = useState<ReadyResult[]>([]);
+  const outputRef = useRef(output);
+  outputRef.current = output;
+  const reviewedRef = useRef(false);
+  reviewedRef.current = review !== null;
+
+  const showResult = useCallback((out: PipelineOutput, seconds: number) => {
+    setTranscribedIn(seconds);
+    setShowTranscript(false);
+    setOutput(out);
+  }, []);
+
+  const runQueue = useCallback(async () => {
+    if (workerRunning.current) return;
+    workerRunning.current = true;
+    try {
+      while (queueRef.current.length > 0) {
+        const job = queueRef.current[0];
+        const started = Date.now();
+        try {
+          const whisperContext = whisperContextRef.current;
+          if (!whisperContext) throw new Error('The speech model is not loaded yet.');
+          const { promise } = whisperContext.transcribe(job.path, whisperOptions(job.settings));
+          const { result } = await promise;
+          const seconds = Math.round((Date.now() - started) / 1000);
+          const out = runPipeline(result);
+          if (outputRef.current === null || reviewedRef.current) {
+            showResult(out, seconds);
+          } else {
+            setReadyResults(prev => [...prev, { n: job.n, output: out, seconds }]);
+          }
+          void addTranscript(result, job.settings.language, seconds, retentionRef.current).then(setHistory, () => {});
+        } catch (err) {
+          setFailure({ message: `#${job.n}: ${formatError(err)}`, retry: 'ready' });
+        }
+        queueRef.current = queueRef.current.slice(1);
+        setQueue(queueRef.current);
+      }
+    } finally {
+      workerRunning.current = false;
+    }
+  }, [showResult]);
+
   const transcribe = useCallback(
-    async (audioPath: string) => {
-      setStage('transcribing');
+    (audioPath: string) => {
+      recordingCounter.current += 1;
+      const job: QueuedRecording = { n: recordingCounter.current, path: audioPath, settings: asrRef.current };
       setFailure(null);
-      setOutput(null);
-      setTranscribedIn(null);
-      setShowTranscript(false);
-      const started = Date.now();
-      try {
-        const whisperContext = whisperContextRef.current;
-        if (!whisperContext) throw new Error('The speech model is not loaded yet.');
-        const settings = asrRef.current;
-        const { promise } = whisperContext.transcribe(audioPath, whisperOptions(settings));
-        const { result } = await promise;
-        const seconds = Math.round((Date.now() - started) / 1000);
-        setTranscribedIn(seconds);
-        setOutput(runPipeline(result));
-        setStage('ready');
-        void addTranscript(result, settings.language, seconds, retentionRef.current).then(setHistory, () => {});
-      } catch (err) {
-        fail(err, 'ready');
+      queueRef.current = [...queueRef.current, job];
+      setQueue(queueRef.current);
+      void runQueue();
+    },
+    [runQueue],
+  );
+
+  const openReadyResult = useCallback(
+    (ready: ReadyResult) => {
+      const apply = () => {
+        setReadyResults(prev => prev.filter(r => r.n !== ready.n));
+        showResult(ready.output, ready.seconds);
+      };
+      if (outputRef.current !== null && !reviewedRef.current) {
+        Alert.alert(t('replace_title'), t('replace_body'), [
+          { text: t('replace_cancel'), style: 'cancel' },
+          { text: t('replace_confirm'), style: 'destructive', onPress: apply },
+        ]);
+      } else {
+        apply();
       }
     },
-    [fail],
+    [showResult, t],
   );
 
   const handleRecordPress = useCallback(async () => {
@@ -520,7 +591,8 @@ function Screen(): React.JSX.Element {
         const recorder = recorderRef.current;
         if (!recorder) throw new Error('Recorder not initialized');
         const audioPath = await recorder.stop();
-        await transcribe(audioPath);
+        setStage('ready');
+        transcribe(audioPath);
       } catch (err) {
         fail(err, 'ready');
       }
@@ -537,7 +609,6 @@ function Screen(): React.JSX.Element {
     }
     try {
       setFailure(null);
-      setOutput(null);
       recorderRef.current = new AudioRecorder();
       await recorderRef.current.start();
       setStage('recording');
@@ -662,12 +733,25 @@ function Screen(): React.JSX.Element {
           </View>
         )}
 
-        {stage === 'transcribing' && (
+        {readyResults.map(ready => (
+          <View key={ready.n} style={styles.card}>
+            <Text style={styles.statusText}>{t('result_ready', { n: ready.n })}</Text>
+            <Text style={styles.metaText}>{t('transcribed_in', { time: formatClock(ready.seconds) })}</Text>
+            <Pressable accessibilityRole="button" onPress={() => openReadyResult(ready)} style={styles.linkButton}>
+              <Text style={styles.linkButtonText}>{t('open_result')}</Text>
+            </Pressable>
+          </View>
+        ))}
+
+        {(stage === 'transcribing' || queue.length > 0) && (
           <View style={styles.card} accessibilityLiveRegion="polite">
             <ActivityIndicator color={theme.accent} />
-            <Text style={styles.statusText}>{t('transcribing')}</Text>
+            <Text style={styles.statusText}>
+              {queue.length > 0 ? t('queue_now', { n: queue[0].n }) : t('transcribing')}
+            </Text>
+            {queue.length > 1 && <Text style={styles.metaText}>{t('queue_waiting', { n: queue.length - 1 })}</Text>}
             <Text style={styles.metaText}>{t('elapsed', { time: formatClock(transcribingSeconds) })}</Text>
-            <Text style={styles.bodyText}>{t('transcribing_hint')}</Text>
+            <Text style={styles.bodyText}>{t(stage === 'recording' ? 'queue_recording_hint' : 'transcribing_hint')}</Text>
           </View>
         )}
 
