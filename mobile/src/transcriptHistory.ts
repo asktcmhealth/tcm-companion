@@ -1,10 +1,13 @@
 import RNFS from 'react-native-fs';
+import { redactIdentifiers } from './redact';
 
 // Recent transcripts, so the physician can go back to an earlier recording.
 //
 // This DOES write transcript text to the device (a transcript can contain a
 // patient's name and details), unlike the draft (see draftStore.ts). That was
-// chosen explicitly: the file lives in the app's private Documents folder,
+// chosen explicitly. What is written has been through redactIdentifiers()
+// (best effort: NRIC, phone, age, names after an introducing phrase -- see
+// redact.ts for what it cannot catch). The file lives in the app's private Documents folder,
 // entries are deleted after the same retention window as recordings, each one
 // can be deleted, and the whole list can be cleared. It never leaves the
 // device. At most MAX_ENTRIES are kept; the oldest drop off first.
@@ -73,8 +76,9 @@ export async function addTranscript(
   now: Date = new Date(),
 ): Promise<TranscriptEntry[]> {
   const current = await loadTranscripts(retentionDays, fs, now.getTime());
-  if (text.trim() === '') return current;
-  const entry: TranscriptEntry = { id: `${now.getTime()}`, savedAt: now.toISOString(), text, language, seconds };
+  const redacted = redactIdentifiers(text);
+  if (redacted.trim() === '') return current;
+  const entry: TranscriptEntry = { id: `${now.getTime()}`, savedAt: now.toISOString(), text: redacted, language, seconds };
   const next = [entry, ...current.filter(e => e.id !== entry.id)].slice(0, MAX_ENTRIES);
   await write(next, fs);
   return next;

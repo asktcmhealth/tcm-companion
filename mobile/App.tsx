@@ -197,6 +197,7 @@ function Screen(): React.JSX.Element {
       herbs: draft.herbs,
       points: draft.points,
       prescriptionSectionFound: draft.prescriptionSectionFound,
+      prescriptionInferred: !!draft.prescriptionInferred,
     };
     restoredRef.current = restored;
     setOutput(restored);
@@ -220,6 +221,7 @@ function Screen(): React.JSX.Element {
         herbs: output.herbs,
         points: output.points,
         prescriptionSectionFound: output.prescriptionSectionFound,
+        prescriptionInferred: output.prescriptionInferred,
         confirmed: [...confirmedDoses],
         herbEdits,
         pointEdits,
@@ -679,6 +681,7 @@ function Screen(): React.JSX.Element {
             {showHistory && (
               <>
                 <Text style={styles.sectionNote}>{t('history_note', { days: retentionDays })}</Text>
+                <Text style={styles.sectionNote}>{t('history_redacted_note')}</Text>
                 {history.map(entry => (
                   <View key={entry.id} style={styles.historyRow}>
                     <Pressable accessibilityRole="button" onPress={() => openTranscript(entry)} style={{ flex: 1 }}>
@@ -750,6 +753,11 @@ function Screen(): React.JSX.Element {
             <View style={styles.section}>
               <SectionTitle theme={theme}>{t('result_prescription')}</SectionTitle>
               <Text style={styles.sectionNote}>{t('result_prescription_desc')}</Text>
+              {output.prescriptionInferred && output.herbs.length > 0 && (
+                <Text accessibilityRole="alert" style={styles.inferredNote}>
+                  {t('rx_inferred')}
+                </Text>
+              )}
               {output.herbs.length > 0 ? (
                 <HerbList
                   herbs={herbs}
@@ -839,6 +847,7 @@ function makeStyles(c: Theme) {
     container: { flex: 1, backgroundColor: c.bg },
     // Centered column no wider than a large phone, so tablets don't stretch cards across the whole screen.
     scroll: { padding: 20, paddingBottom: 48, width: '100%', maxWidth: 640, alignSelf: 'center' },
+    inferredNote: { color: c.warnInk, fontSize: 13, lineHeight: 18, marginBottom: 8, fontWeight: '600' },
     restoredNote: { color: c.inkMuted, fontSize: 13, marginBottom: 12 },
     topRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
     stepsCard: { ...cardShadow(c), backgroundColor: c.card, borderColor: c.border, borderWidth: 1, borderRadius: 14, padding: 16, marginBottom: 16 },

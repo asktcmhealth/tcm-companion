@@ -5,7 +5,7 @@
 // text, then extraction of both with the ambiguity edits carried through.
 
 import { toSimplified } from './textNormalize';
-import { correctPrescriptionOnly, correctAcupunctureOnly } from './correctHerbs';
+import { correctPrescriptionOnly, correctAcupunctureOnly, prescriptionSectionInferred } from './correctHerbs';
 import { extractPrescription, extractAcupuncture, type HerbEntry, type AcupointEntry } from './pipeline';
 
 export interface PipelineOutput {
@@ -17,6 +17,9 @@ export interface PipelineOutput {
   // empty because nothing was searched, NOT because the physician prescribed
   // nothing. The UI must say so rather than show a silent blank.
   prescriptionSectionFound: boolean;
+  // True when the herbs were found by their "name + dose" pattern because no
+  // "处方" was recognised. The UI tells the physician to check the list.
+  prescriptionInferred: boolean;
 }
 
 export function runPipeline(rawTranscript: string): PipelineOutput {
@@ -30,5 +33,11 @@ export function runPipeline(rawTranscript: string): PipelineOutput {
   const acu = correctAcupunctureOnly(rx.corrected);
   const points = extractAcupuncture(acu.corrected, acu.edits);
 
-  return { transcript, herbs, points, prescriptionSectionFound: rx.spans.length > 0 };
+  return {
+    transcript,
+    herbs,
+    points,
+    prescriptionSectionFound: rx.spans.length > 0,
+    prescriptionInferred: prescriptionSectionInferred(transcript),
+  };
 }

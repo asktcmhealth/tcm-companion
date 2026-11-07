@@ -453,12 +453,36 @@ _PRESCRIPTION_START_THRESHOLD = 0.85
 _DOSAGE_BOUNDARY_RE = re.compile(r"\d+\s*[gG克]")
 
 
-def find_prescription_spans(text, max_span_len=250):
-    """Herb-prescription spans -- thin wrapper over find_treatment_spans."""
+# Fallback for a prescription read out WITHOUT saying "处方" (or with it too
+# garbled to recognise): three or more consecutive "name + dose" groups, e.g.
+# "柴胡10克，当归10克，甘草6克". Ordinary narrative almost never contains that
+# shape, so it is a safe structural signal; it is used ONLY when no 处方
+# trigger was found, and callers surface it to the physician as "inferred".
+# A name is 2-4 characters directly before the number, so at most a couple of
+# preceding narrative characters can be swept in at the start of the run.
+_DOSE_RUN_RE = re.compile(r"(?:[一-鿿]{2,4}\s*\d+(?:\.\d+)?\s*[gG克][，,、;；。.\s]{0,3}){3,}")
+
+
+def find_dose_run_spans(text):
+    return _merge_overlapping([(m.start(), m.end()) for m in _DOSE_RUN_RE.finditer(text)])
+
+
+def find_trigger_prescription_spans(text, max_span_len=250):
+    """Spans that follow a (possibly garbled) 处方 trigger -- the primary signal."""
     return find_treatment_spans(
         text, "处方", _RX_PRESCRIPTION_END, max_span_len,
         boundary_re=_DOSAGE_BOUNDARY_RE, fuzzy_threshold=_PRESCRIPTION_START_THRESHOLD,
     )
+
+
+def find_prescription_spans(text, max_span_len=250):
+    """Herb-prescription spans: after a 处方 trigger, else a run of dosed herbs."""
+    return find_trigger_prescription_spans(text, max_span_len) or find_dose_run_spans(text)
+
+
+def prescription_section_inferred(text):
+    """True when the prescription was located by its dose pattern, not a 处方 trigger."""
+    return not find_trigger_prescription_spans(text) and bool(find_dose_run_spans(text))
 
 
 def correct_prescription_only(text, vocab=None):

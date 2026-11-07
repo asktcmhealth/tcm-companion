@@ -65,6 +65,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     empty_no_acupoints: "No acupoints extracted.",
     empty_no_pii: "No PII detected.",
     empty_note: "(empty)",
+    rx_inferred: "No “处方” was heard, so these herbs were picked out by their name-and-dose pattern. Check every herb and dose against the recording.",
     empty_no_prescription: "No prescription section was detected. Say “处方” before reading out the herbs so the app knows where the prescription starts.",
 
     badge_high_risk: "High-risk herb",
@@ -174,6 +175,7 @@ const STRINGS: Record<Lang, Record<string, string>> = {
     empty_no_acupoints: "未提取到穴位。",
     empty_no_pii: "未检测到个人信息。",
     empty_note: "（空）",
+    rx_inferred: "没有听到“处方”，以下药材是根据“药名＋剂量”的格式识别出来的。请对照录音逐一核对药材和剂量。",
     empty_no_prescription: "未检测到处方部分。读药材之前请先说“处方”，应用才能知道处方从哪里开始。",
 
     badge_high_risk: "高风险药材",

@@ -444,12 +444,42 @@ const DOSAGE_BOUNDARY_RE = /\d+\s*[gG克]/;
 
 // startThreshold is overridable only so tests can prove the fuzzy-start guard holds even at a
 // deliberately permissive value; production callers use the default.
-export function findPrescriptionSpans(
+export function findTriggerPrescriptionSpans(
   text: string,
   maxSpanLen = 250,
   startThreshold = PRESCRIPTION_START_THRESHOLD,
 ): Array<[number, number]> {
   return findTreatmentSpans(text, '处方', RX_PRESCRIPTION_END, maxSpanLen, DOSAGE_BOUNDARY_RE, startThreshold);
+}
+
+// Fallback for a prescription read out WITHOUT saying "处方" (or with it too
+// garbled to recognise): three or more consecutive "name + dose" groups, e.g.
+// "柴胡10克，当归10克，甘草6克". Ordinary narrative almost never contains that
+// shape, so it is a safe structural signal; it is used ONLY when no 处方
+// trigger was found, and surfaced to the physician as "inferred". Same regex
+// as the Python engine (_DOSE_RUN_RE).
+const DOSE_RUN_RE = /(?:[一-鿿]{2,4}\s*\d+(?:\.\d+)?\s*[gG克][，,、;；。.\s]{0,3}){3,}/g;
+
+export function findDoseRunSpans(text: string): Array<[number, number]> {
+  const spans: Array<[number, number]> = [];
+  const re = new RegExp(DOSE_RUN_RE.source, 'g');
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) spans.push([m.index, m.index + m[0].length]);
+  return mergeOverlapping(spans);
+}
+
+export function findPrescriptionSpans(
+  text: string,
+  maxSpanLen = 250,
+  startThreshold = PRESCRIPTION_START_THRESHOLD,
+): Array<[number, number]> {
+  const triggered = findTriggerPrescriptionSpans(text, maxSpanLen, startThreshold);
+  return triggered.length > 0 ? triggered : findDoseRunSpans(text);
+}
+
+/** True when the prescription was located by its dose pattern, not a 处方 trigger. */
+export function prescriptionSectionInferred(text: string): boolean {
+  return findTriggerPrescriptionSpans(text).length === 0 && findDoseRunSpans(text).length > 0;
 }
 
 export function correctPrescriptionOnly(text: string): { corrected: string; edits: Correction[]; spans: Array<[number, number]> } {

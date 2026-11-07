@@ -17,6 +17,7 @@ export interface DraftState {
   herbs: HerbEntry[];
   points: AcupointEntry[];
   prescriptionSectionFound: boolean;
+  prescriptionInferred?: boolean;
   confirmed: number[];
   herbEdits: Record<number, HerbEdit>;
   pointEdits: Record<number, PointEdit>;
@@ -42,6 +43,7 @@ export async function saveDraft(state: DraftState, fs: Fs = RNFS, now: Date = ne
     herbs: state.herbs,
     points: state.points,
     prescriptionSectionFound: state.prescriptionSectionFound,
+    ...(state.prescriptionInferred ? { prescriptionInferred: true } : {}),
     confirmed: state.confirmed,
     herbEdits: state.herbEdits,
     pointEdits: state.pointEdits,
@@ -83,6 +85,7 @@ export async function loadDraft(
       herbs: data.herbs,
       points: data.points,
       prescriptionSectionFound: !!data.prescriptionSectionFound,
+      ...(data.prescriptionInferred ? { prescriptionInferred: true } : {}),
       confirmed: Array.isArray(data.confirmed) ? data.confirmed.filter(n => Number.isInteger(n)) : [],
       herbEdits: data.herbEdits ?? {},
       pointEdits: data.pointEdits ?? {},

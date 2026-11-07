@@ -25,7 +25,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, ".."))
 
-from correct_herbs import correct_prescription_only, correct_acupuncture_only  # noqa: E402
+from correct_herbs import correct_prescription_only, correct_acupuncture_only, prescription_section_inferred  # noqa: E402
 from pipeline import extract_prescription, extract_acupuncture  # noqa: E402
 import correct_herbs as ch  # noqa: E402
 from herb_database import HERB_DATABASE  # noqa: E402
@@ -45,6 +45,12 @@ FIXTURES = {
     "double_trigger": '我给你开个处方，处方如下：柴胡10g白芍15g当归10g方剂基础：逍遥散。服药说明：七天。',
     "narrative_sounds_like_trigger": '情绪方面她最近比较容易烦躁有时候会莫名其妙的叹气月经周期基本正常处方如下：柴胡10g白芍15g方剂基础：逍遥散。',
     "no_prescription_trigger": '今天病人咳嗽两个星期，痰多色白，舌淡红，苔白腻，脉滑。',
+    # Prescription read out without saying 处方: found by its dose pattern.
+    "no_trigger_dose_run": '今天病人咳嗽两个星期，痰多色白。柴胡10g，白芍15g，当归10g，白术15g，茯苓20g，甘草6g。服药说明：七天。',
+    "no_trigger_dose_run_garbled": '今天病人咳嗽两个星期，痰多色白。柴糊10克,当归10克,白竹15克,甘草6克,陈皮6克。',
+    # Doses in ordinary narrative must NOT be taken as a prescription.
+    "narrative_doses_not_a_prescription": '每次5克，每天吃两次，我建议她少吃冷的东西，也可以喝一点姜茶，每天3克就够了。',
+    "two_herbs_no_trigger": '今天病人咳嗽，柴胡10g，当归10g，建议休息。',
 }
 
 
@@ -56,6 +62,7 @@ def run(text):
     return {
         "input": text,
         "prescriptionSectionFound": len(rx_spans) > 0,
+        "prescriptionInferred": prescription_section_inferred(text),
         "herbs": [
             {"name": h["name"], "dosage": h["dosage"], "ambiguous": h["ambiguous"], "ambiguousWith": h["ambiguous_with"]}
             for h in herbs

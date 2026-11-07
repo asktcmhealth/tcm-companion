@@ -26,7 +26,9 @@ Decisions made while building (details in `plan-review.md`, "Mobile app: data-ha
   uncertain/unchecked entries. No sign-off step exists yet.
 - Mobile never sends transcripts to an LLM, so de-identification is desktop-only.
 - Audio retention: in-app recordings are deleted after 30 days by default (90 optional).
-- Mobile saves recent transcripts (max 20) on the device so an earlier recording can be reopened; they follow the same 30/90-day window, can be deleted one by one or all at once, and never leave the device. The draft file still holds no transcript. Transcription language (Mandarin default / English / Auto) is a user setting; herb checking only works on Chinese text.
+- The prescription is located by a spoken 处方 trigger (fuzzy-matched). If none is found, a run of 3+ "name + dose" groups is used instead (find_dose_run_spans / findDoseRunSpans, same regex in both engines) and the UI says it was inferred. Doses in ordinary narrative must not trigger it (parity fixtures cover this).
+- Transcription language is Mandarin or English only -- no Auto: Whisper detected short Singapore-accented English as Malay.
+- Mobile saves recent transcripts (max 20) on the device so an earlier recording can be reopened; they follow the same 30/90-day window, can be deleted one by one or all at once, and never leave the device. What is stored goes through mobile/src/redact.ts first (best effort: NRIC, phone, age, names after an introducing phrase -- it cannot catch every name, and the desktop NER models are too heavy for a phone). The draft file still holds no transcript. Transcription language (Mandarin default / English / Auto) is a user setting; herb checking only works on Chinese text.
 - The herb (126) and acupoint (58) databases are DRAFTS with no physician sign-off yet; review
   sheets are in `physician-review/`. Do not present them as verified.
 - Do not add a Whisper `initial_prompt` herb list: it caused hallucinated paragraphs on desktop and

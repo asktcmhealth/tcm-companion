@@ -26,7 +26,7 @@ import json
 # benchmark/ has the actual pipeline logic; sidecar/ only adds the IPC framing.
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "benchmark"))
 
-from correct_herbs import correct_prescription_only, correct_acupuncture_only
+from correct_herbs import correct_prescription_only, correct_acupuncture_only, prescription_section_inferred
 from pipeline import extract_prescription, extract_acupuncture, build_consultation_note
 from dosage_ranges import check_dosage
 from herb_database import HERB_DATABASE
@@ -83,6 +83,7 @@ def process(transcript_text):
     return {
         "schema_version": "1.1-prototype",
         "prescription_spans_found": len(spans),
+        "prescription_inferred": prescription_section_inferred(transcript_text),
         "acupuncture_spans_found": len(acu_spans),
         "correction_edits": [
             {

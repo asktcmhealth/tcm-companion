@@ -104,3 +104,19 @@ describe('speech settings', () => {
     expect(await loadAsrSettings(fs as never)).toEqual(DEFAULT_ASR_SETTINGS);
   });
 });
+
+describe('what the history writes to disk', () => {
+  it('stores the redacted transcript, never the identifiers', async () => {
+    const { fs, files } = memoryFs();
+    await addTranscript('hello today patient is julie low, NRIC是S987643G,电话81234567', 'en', 5, 30, fs as never, NOW);
+    const onDisk = files.get('/docs/transcripts.json') as string;
+    expect(onDisk).not.toMatch(/julie|low|S987643G|81234567/i);
+    expect(onDisk).toContain('[NAME]');
+  });
+
+  it('treats a saved "auto" language from an older build as Mandarin', async () => {
+    const { fs, files } = memoryFs();
+    files.set('/docs/asr_settings.json', JSON.stringify({ language: 'auto', threads: 4 }));
+    expect(await loadAsrSettings(fs as never)).toEqual({ language: 'zh', threads: 4 });
+  });
+});

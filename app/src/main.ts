@@ -33,6 +33,8 @@ interface DeidRedaction {
 interface PipelineResult {
   schema_version: string;
   prescription_spans_found: number;
+  // True when the herbs were found by their name-and-dose pattern because no 处方 was heard.
+  prescription_inferred?: boolean;
   acupuncture_spans_found: number;
   correction_edits: { original: string; corrected: string; similarity: number }[];
   prescription: { herbs: HerbEntry[] };
@@ -341,6 +343,7 @@ function renderPrescription(
   sectionFound: boolean,
   confirmed: Set<number>,
   editing: { index: number; invalid: boolean } | null,
+  inferred = false,
 ): string {
   // An empty list has two very different meanings. If no "处方" trigger was
   // recognized nothing was even searched -- the physician must not read that as
@@ -397,7 +400,8 @@ function renderPrescription(
     })
     .join("");
   const progress = t("dose_progress").replace("{n}", String(confirmed.size)).replace("{total}", String(herbs.length));
-  return `${banner}<p class="dose-progress" role="status">${progress}</p><ul class="entry-list">${rows}</ul>`;
+  const inferredNote = inferred ? `<p class="review-banner" role="alert">${t("rx_inferred")}</p>` : "";
+  return `${inferredNote}${banner}<p class="dose-progress" role="status">${progress}</p><ul class="entry-list">${rows}</ul>`;
 }
 
 function renderAcupuncture(points: EffectivePoint[]): string {
@@ -610,6 +614,7 @@ function renderSelectedJob() {
     result.prescription_spans_found > 0,
     confirmedDoses.get(job.id)!,
     editing,
+    !!result.prescription_inferred,
   );
   prescriptionEl.onchange = (event) => {
     const box = event.target as HTMLInputElement;
@@ -937,6 +942,7 @@ function persistDrafts() {
         herbs: j.result!.prescription.herbs,
         points: j.result!.acupuncture.points,
         prescriptionSectionFound: j.result!.prescription_spans_found > 0,
+        prescriptionInferred: !!j.result!.prescription_inferred,
         confirmed: [...(confirmedDoses.get(j.id) ?? [])],
         herbEdits: herbEdits.get(j.id) ?? {},
         pointEdits: pointEdits.get(j.id) ?? {},
@@ -967,6 +973,7 @@ function restoreDrafts() {
       result: {
         schema_version: "restored-draft",
         prescription_spans_found: d.prescriptionSectionFound ? 1 : 0,
+        prescription_inferred: !!d.prescriptionInferred,
         acupuncture_spans_found: d.points.length > 0 ? 1 : 0,
         correction_edits: [],
         prescription: { herbs: d.herbs },

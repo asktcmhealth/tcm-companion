@@ -11,7 +11,7 @@ import fixtures from './fixtures/parity.json';
 
 type Herb = { name: string; dosage: number; ambiguous: boolean; ambiguousWith: string | null };
 type Point = { name: string; laterality: string | null; ambiguous: boolean; ambiguousWith: string | null };
-type Fixture = { input: string; prescriptionSectionFound: boolean; herbs: Herb[]; points: Point[] };
+type Fixture = { input: string; prescriptionSectionFound: boolean; prescriptionInferred: boolean; herbs: Herb[]; points: Point[] };
 
 const cases = Object.entries(fixtures as Record<string, Fixture>);
 
@@ -20,6 +20,7 @@ describe('mobile engine matches the desktop Python engine', () => {
     const out = runPipeline(expected.input);
 
     expect(out.prescriptionSectionFound).toBe(expected.prescriptionSectionFound);
+    expect(out.prescriptionInferred).toBe(expected.prescriptionInferred);
     expect(
       out.herbs.map(h => ({ name: h.name, dosage: h.dosage, ambiguous: h.ambiguous, ambiguousWith: h.ambiguousWith ?? null })),
     ).toEqual(expected.herbs);

@@ -22,6 +22,7 @@ export interface DraftJob {
   herbs: HerbEntry[];
   points: AcupointEntry[];
   prescriptionSectionFound: boolean;
+  prescriptionInferred?: boolean;
   confirmed: number[];
   herbEdits: Record<number, HerbEdit>;
   pointEdits: Record<number, PointEdit>;
@@ -40,6 +41,7 @@ export function serializeDrafts(jobs: DraftJob[]): string {
       herbs: j.herbs,
       points: j.points,
       prescriptionSectionFound: j.prescriptionSectionFound,
+      ...(j.prescriptionInferred ? { prescriptionInferred: true } : {}),
       confirmed: j.confirmed,
       herbEdits: j.herbEdits,
       pointEdits: j.pointEdits,
@@ -74,6 +76,7 @@ export function parseDrafts(raw: string | null, retentionDays: number, now: numb
         herbs: j.herbs,
         points: j.points,
         prescriptionSectionFound: !!j.prescriptionSectionFound,
+        ...(j.prescriptionInferred ? { prescriptionInferred: true } : {}),
         confirmed: Array.isArray(j.confirmed) ? j.confirmed.filter((n: unknown) => Number.isInteger(n)) : [],
         herbEdits: j.herbEdits ?? {},
         pointEdits: j.pointEdits ?? {},
